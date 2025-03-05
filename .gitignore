@@ -1,0 +1,83 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code settings (không bắt buộc, nếu không muốn chia sẻ config cá nhân)
+.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-version
+.pub-cache/
+.pub/
+.packages
+/l10n.yaml  # Nếu sử dụng Flutter localization nhưng không muốn commit config này
+/coverage/  # Thư mục báo cáo coverage (thường không cần đẩy lên repo)
+/generated_plugin_registrant.dart  # File tự động sinh, không cần đưa vào version control
+
+# Build output
+/build/
+**/build/
+**/ios/.symlinks/
+/android/.gradle/
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Firebase related (nếu dùng Firebase và không muốn commit file cấu hình cá nhân)
+.firebase/
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# Fastlane related (nếu sử dụng Fastlane để tự động hóa build và deploy)
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/*.keychain
+fastlane/.env
+
+# Xcode related (tránh commit file cache của Xcode)
+ios/Flutter/Flutter.podspec
+ios/.generated
+ios/Pods/
+ios/.symlinks/
+ios/Podfile.lock
+ios/Runner.xcworkspace/
+xcuserdata/
+xcshareddata/
+
+# Android related
+android/.cxx/
+# File này chứa đường dẫn SDK, không nên commit
+android/local.properties 
+# Nếu có key để ký ứng dụng, tuyệt đối không commit! 
+android/key.jks  
+# Chứa thông tin key ứng dụng, không commit!
+android/app/key.properties 
