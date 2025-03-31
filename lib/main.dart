@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
-
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'pages/DangNhap/DangNhap.dart';
+import 'pages/Home/Home.dart';
+import 'pages/DangKy/DangKy.dart';
+// Khai báo biến FirebaseFirestore toàn cục nếu bạn muốn sử dụng ở nhiều nơi
+final FirebaseFirestore db = FirebaseFirestore.instance;
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -11,7 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Hỗ Trợ Thiên Tai',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -28,10 +36,28 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlueAccent),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      initialRoute: '/dangnhap',
+      routes: {
+        '/dangnhap': (context) => Dangnhap(), 
+        '/dangky': (context) => Dangky(),
+        '/home': (context) => Home(),
+      },
+      // home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      // home: SafeArea(
+      //   child: Scaffold(
+      //     appBar: AppBar(
+      //       backgroundColor: Theme.of(context).colorScheme.primary,
+      //       title: const Text('Flutter Demo Home Page'),
+      //     ),
+      //     body: const Center(
+      //       child: Text('Firebase is initialized! hiihb'),
+      //     ),
+      //   ),
+      // ),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

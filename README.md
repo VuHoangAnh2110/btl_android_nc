@@ -94,3 +94,68 @@ flutter run -d <device_id>
 
 ---------------------------------------------------------------------------------
 Link figma: https://www.figma.com/board/vgxKLwPdiVXUuJZCZhBkMz/Prototyping-Example-(Copy)?node-id=0-1&t=w568l6ef8Yxb881P-1
+
+# Hướng Dẫn Thiết Lập Firebase Cho Dự Án Flutter
+
+## 1. Clone Dự Án
+Trước tiên, bạn cần clone dự án từ repository:
+```sh
+git clone <repo_link>
+cd <project_name>
+```
+
+Sau đó, chạy lệnh để tải dependencies:
+```sh
+flutter pub get
+```
+
+---
+
+## 2. Cấu Hình Firebase
+Để Firebase hoạt động trên máy của bạn, cần thiết lập các file cấu hình Firebase theo hướng dẫn dưới đây.
+
+### 🔥 **Android**
+1. Truy cập [Firebase Console](https://console.firebase.google.com/)
+2. Chọn dự án đã được tạo sẵn.
+3. Vào **Project Settings** → Tab **General**.
+4. Trong phần **"Your apps"**, chọn **app Android**.
+5. **Tải file** `google-services.json` và đặt vào thư mục:
+   ```
+   android/app/google-services.json
+   ```
+
+### 🍏 **iOS**
+1. Truy cập [Firebase Console](https://console.firebase.google.com/)
+2. Chọn dự án Firebase.
+3. Vào **Project Settings** → Tab **General**.
+4. Chọn **app iOS**.
+5. **Tải file** `GoogleService-Info.plist` và đặt vào thư mục:
+   ```
+   ios/Runner/GoogleService-Info.plist
+   ```
+
+---
+
+## 3. Kiểm Tra Firebase Đã Hoạt Động
+Chạy lệnh sau để đảm bảo Firebase được kết nối đúng cách:
+```sh
+flutterfire configure
+```
+
+Nếu Firebase chưa được liên kết, lệnh này sẽ tự động cập nhật cấu hình Firebase cho dự án.
+
+---
+
+## 4. Chạy Ứng Dụng
+Sau khi thiết lập xong, chạy ứng dụng bằng lệnh:
+```sh
+flutter run
+```
+
+Nếu gặp lỗi, kiểm tra lại:
+- Đã thêm đúng `google-services.json` và `GoogleService-Info.plist` chưa?
+- Đã chạy `flutter pub get` chưa?
+- Firebase Rules có đúng không? (Đảm bảo quyền truy cập dữ liệu hợp lý)
+
+Chúc bạn thành công! 🚀
+
