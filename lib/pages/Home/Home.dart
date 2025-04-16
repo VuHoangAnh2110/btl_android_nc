@@ -1,15 +1,96 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+final FirebaseFirestore db = FirebaseFirestore.instance;
+
 class Home extends StatefulWidget {
   @override
   _HomeState createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
-  // Thông tin người dùng hiện tại
-  Map<String, dynamic>? userData;
   int _selectedIndex = 0;
+  Map<String, dynamic>? userData;
+  bool isLoggedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
+
+  Future<void> fetchUserData() async {
+    try {
+      // Lấy thông tin người dùng hiện tại (nếu có)
+      final querySnapshot = await db.collection('users').get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        // Tìm người dùng đã đăng nhập
+        QueryDocumentSnapshot? loggedInUser;
+        
+        for (var doc in querySnapshot.docs) {
+          // Kiểm tra có trường isLoggedIn hay không
+          if (doc.data().containsKey('isLoggedIn') && doc['isLoggedIn'] == true) {
+            loggedInUser = doc;
+            break;
+          }
+        }
+
+        setState(() {
+          if (loggedInUser != null) {
+            userData = loggedInUser.data() as Map<String, dynamic>;
+            isLoggedIn = true;
+          } else {
+            userData = null;
+            isLoggedIn = false;
+          }
+        });
+      } else {
+        setState(() {
+          userData = null;
+          isLoggedIn = false;
+        });
+      }
+    } catch (e) {
+      print('Lỗi khi lấy thông tin người dùng: $e');
+      setState(() {
+        userData = null;
+        isLoggedIn = false;
+      });
+    }
+  }
+
+  Future<void> logout() async {
+    try {
+      if (userData != null && userData!.containsKey('phone')) {
+        // Tìm người dùng theo số điện thoại để đăng xuất
+        final querySnapshot = await db
+            .collection('users')
+            .where('phone', isEqualTo: userData!['phone'])
+            .get();
+
+        if (querySnapshot.docs.isNotEmpty) {
+          final userDoc = querySnapshot.docs.first;
+          // Cập nhật trạng thái đăng xuất
+          await db.collection('users').doc(userDoc.id).update({'isLoggedIn': false});
+        }
+      }
+
+      setState(() {
+        userData = null;
+        isLoggedIn = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đăng xuất thành công')),
+      );
+    } catch (e) {
+      print('Lỗi khi đăng xuất: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đăng xuất không thành công: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,35 +100,43 @@ class _HomeState extends State<Home> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         actions: [
+          // Hiển thị nút đăng nhập hoặc đăng xuất tùy thuộc vào trạng thái
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: Icon(isLoggedIn ? Icons.logout : Icons.login),
             onPressed: () {
-              // Hiển thị hộp thoại xác nhận đăng xuất
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text('Đăng xuất'),
-                    content: Text('Bạn có chắc chắn muốn đăng xuất?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(); // Đóng hộp thoại
-                        },
-                        child: Text('Hủy'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(); // Đóng hộp thoại
-                          // Quay lại màn hình đăng nhập
-                          Navigator.pushReplacementNamed(context, '/dangnhap');
-                        },
-                        child: Text('Đăng xuất'),
-                      ),
-                    ],
-                  );
-                },
-              );
+              if (isLoggedIn) {
+                // Hiển thị hộp thoại xác nhận đăng xuất
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text('Đăng xuất'),
+                      content: Text('Bạn có chắc chắn muốn đăng xuất?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Đóng hộp thoại
+                          },
+                          child: Text('Hủy'),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            Navigator.of(context).pop(); // Đóng hộp thoại
+                            await logout(); // Đăng xuất
+                          },
+                          child: Text('Đăng xuất'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              } else {
+                // Chuyển đến màn hình đăng nhập
+                Navigator.pushNamed(context, '/dangnhap').then((_) {
+                  // Cập nhật lại dữ liệu người dùng sau khi quay lại từ màn hình đăng nhập
+                  fetchUserData();
+                });
+              }
             },
           ),
         ],
@@ -55,9 +144,9 @@ class _HomeState extends State<Home> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          // Trang chủ
+          // Trang chủ - luôn hiển thị, không phụ thuộc vào đăng nhập
           buildHomeTab(),
-          // Trang tài khoản
+          // Trang tài khoản - có thể tùy chỉnh để hiển thị khác nhau khi đã đăng nhập hoặc chưa
           buildProfileTab(),
           // Trang cài đặt
           buildSettingsTab(),
@@ -86,6 +175,31 @@ class _HomeState extends State<Home> {
           });
         },
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          // Xử lý khi nhấn nút SOS
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('SOS'),
+                content: Text('Bạn đã gửi yêu cầu cứu trợ khẩn cấp!'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+        label: Text('SOS'),
+        icon: Icon(Icons.warning, color: Colors.white),
+        backgroundColor: Colors.red,
+      ),
     );
   }
 
@@ -108,7 +222,9 @@ class _HomeState extends State<Home> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Chào mừng bạn đã đăng nhập thành công!',
+                  isLoggedIn 
+                      ? 'Chào mừng, ${userData?['name'] ?? 'Người dùng'}!'
+                      : 'Chào mừng đến với ứng dụng Hỗ Trợ Thiên Tai',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -116,24 +232,29 @@ class _HomeState extends State<Home> {
                   ),
                 ),
                 SizedBox(height: 10),
-                Text(
-                  'Cùng nhau hỗ trợ người dân vùng thiên tai',
-                  style: TextStyle(fontSize: 16),
-                ),
+                if (isLoggedIn)
+                  Text(
+                    'Số điện thoại: ${userData?['phone'] ?? 'Không có'}',
+                    style: TextStyle(fontSize: 16),
+                  )
+                else
+                  Text(
+                    'Hãy đăng nhập để sử dụng đầy đủ các tính năng',
+                    style: TextStyle(fontSize: 16),
+                  ),
               ],
             ),
           ),
 
+          // Phần còn lại của code giữ nguyên
           SizedBox(height: 30),
-
           // Các tính năng chính
           Text(
             'Tính năng chính',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 15),
-
-          // Grid các tính năng
+          // Giữ nguyên phần code GridView và ListView...
           GridView.count(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
@@ -279,8 +400,32 @@ class _HomeState extends State<Home> {
 
   // Widget cho tab Tài khoản
   Widget buildProfileTab() {
+    if (!isLoggedIn) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Bạn chưa đăng nhập',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/dangnhap').then((_) {
+                  fetchUserData();
+                });
+              },
+              child: Text('Đăng nhập ngay'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Nếu đã đăng nhập, hiển thị thông tin tài khoản
     return Center(
-      child: Text('Trang thông tin tài khoản sẽ hiển thị ở đây'),
+      child: Text('Thông tin tài khoản của ${userData?['name']}'),
     );
   }
 
