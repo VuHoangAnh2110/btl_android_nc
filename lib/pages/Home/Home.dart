@@ -4,6 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 final FirebaseFirestore db = FirebaseFirestore.instance;
 
 class Home extends StatefulWidget {
+  final bool isAdmin;
+
+  Home({this.isAdmin = false});
   @override
   _HomeState createState() => _HomeState();
 }
@@ -96,77 +99,96 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Trang chủ'),
+        title: Text(widget.isAdmin ? 'Trang quản trị' : 'Trang chủ'),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         actions: [
-          // Hiển thị nút đăng nhập hoặc đăng xuất tùy thuộc vào trạng thái
+          // Hiển thị badge hoặc icon riêng cho admin
+          if (widget.isAdmin)
+            Icon(Icons.admin_panel_settings),
+          // Nút đăng xuất
           IconButton(
-            icon: Icon(isLoggedIn ? Icons.logout : Icons.login),
+            icon: Icon(Icons.logout),
             onPressed: () {
-              if (isLoggedIn) {
-                // Hiển thị hộp thoại xác nhận đăng xuất
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('Đăng xuất'),
-                      content: Text('Bạn có chắc chắn muốn đăng xuất?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop(); // Đóng hộp thoại
-                          },
-                          child: Text('Hủy'),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            Navigator.of(context).pop(); // Đóng hộp thoại
-                            await logout(); // Đăng xuất
-                          },
-                          child: Text('Đăng xuất'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              } else {
-                // Chuyển đến màn hình đăng nhập
-                Navigator.pushNamed(context, '/dangnhap').then((_) {
-                  // Cập nhật lại dữ liệu người dùng sau khi quay lại từ màn hình đăng nhập
-                  fetchUserData();
-                });
-              }
+              // Hiển thị hộp thoại xác nhận đăng xuất
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('Đăng xuất'),
+                    content: Text('Bạn có chắc chắn muốn đăng xuất?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Text('Hủy'),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          await logout();
+                        },
+                        child: Text('Đăng xuất'),
+                      ),
+                    ],
+                  );
+                },
+              );
             },
           ),
         ],
       ),
+      
+      // Hiển thị nội dung khác nhau dựa trên quyền admin
       body: IndexedStack(
         index: _selectedIndex,
-        children: [
-          // Trang chủ - luôn hiển thị, không phụ thuộc vào đăng nhập
-          buildHomeTab(),
-          // Trang tài khoản - có thể tùy chỉnh để hiển thị khác nhau khi đã đăng nhập hoặc chưa
-          buildProfileTab(),
-          // Trang cài đặt
-          buildSettingsTab(),
-        ],
+        children: widget.isAdmin 
+            ? [
+                // Các tab cho admin
+                buildAdminHomeTab(),
+                buildAdminManageUsersTab(),
+                buildSettingsTab(),
+              ]
+            : [
+                // Các tab cho người dùng thường
+                buildHomeTab(),
+                buildProfileTab(),
+                buildSettingsTab(),
+              ],
       ),
+      
+      // Bottom navigation với các mục khác nhau cho admin và người dùng thường
       bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Trang chủ',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Tài khoản',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Cài đặt',
-          ),
-        ],
+        items: widget.isAdmin
+            ? [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.dashboard),
+                  label: 'Tổng quan',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.people),
+                  label: 'Quản lý người dùng',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.settings),
+                  label: 'Cài đặt',
+                ),
+              ]
+            : [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home),
+                  label: 'Trang chủ',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person),
+                  label: 'Tài khoản',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.settings),
+                  label: 'Cài đặt',
+                ),
+              ],
         currentIndex: _selectedIndex,
         selectedItemColor: Theme.of(context).colorScheme.primary,
         onTap: (index) {
@@ -175,9 +197,10 @@ class _HomeState extends State<Home> {
           });
         },
       ),
+      
+      // SOS button cho cả admin và người dùng thường
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // Xử lý khi nhấn nút SOS
           showDialog(
             context: context,
             builder: (BuildContext context) {
@@ -433,6 +456,19 @@ class _HomeState extends State<Home> {
   Widget buildSettingsTab() {
     return Center(
       child: Text('Trang cài đặt sẽ hiển thị ở đây'),
+    );
+  }
+
+  // Thêm các phương thức build cho admin
+  Widget buildAdminHomeTab() {
+    return Center(
+      child: Text('Đây là trang quản trị viên', style: TextStyle(fontSize: 18)),
+    );
+  }
+  
+  Widget buildAdminManageUsersTab() {
+    return Center(
+      child: Text('Quản lý người dùng', style: TextStyle(fontSize: 18)),
     );
   }
 }

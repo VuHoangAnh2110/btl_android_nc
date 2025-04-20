@@ -36,6 +36,7 @@ class _DangNhap extends State<Dangnhap> {
           .get();
       
       if (user.docs.isEmpty) {
+        // Xử lý trường hợp không tìm thấy user
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Số điện thoại hoặc mật khẩu không đúng'),
@@ -47,16 +48,40 @@ class _DangNhap extends State<Dangnhap> {
         return;
       }
       
+      // Lấy dữ liệu người dùng
+      final userData = user.docs.first.data();
+      final userId = user.docs.first.id;
+      
+      // Kiểm tra quyền admin một cách an toàn
+      final bool isAdmin = userData.containsKey('isAdmin') ? userData['isAdmin'] ?? false : false;
+      
       // Đăng nhập thành công, cập nhật trạng thái isLoggedIn
-      await firestore.collection('users').doc(user.docs.first.id).update({
+      await firestore.collection('users').doc(userId).update({
         'isLoggedIn': true
       }).catchError((error) {
         print("Không thể cập nhật trạng thái đăng nhập: $error");
       });
       
-      // Chuyển về trang Home
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Home()));
+      // Hiển thị thông báo thành công với vai trò tương ứng
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đăng nhập thành công với quyền ${isAdmin ? 'quản trị viên' : 'người dùng'}'),
+          backgroundColor: Colors.green,
+        )
+      );
+      
+      // Lưu thông tin người dùng (có thể sử dụng shared preferences hoặc state provider)
+      // Ví dụ: Sử dụng biến toàn cục hoặc shared preferences
+      
+      // Chuyển về trang Home với thông tin về vai trò admin
+      Navigator.pushReplacement(
+        context, 
+        MaterialPageRoute(
+          builder: (context) => Home(isAdmin: isAdmin)
+        )
+      );
     } catch (e) {
+      // Xử lý lỗi
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Lỗi: $e"),
