@@ -29,10 +29,29 @@ class _HomeState extends State<Home> {
   bool isLoggedIn = false; // Biến để theo dõi trạng thái đăng nhập
   bool isActuallyAdmin = false; // Biến mới để theo dõi quyền admin thực tế
 
+
+  
+  // Thêm các controller vào đây - là thuộc tính của lớp
+  late TextEditingController _titleController;
+  late TextEditingController _bodyController;
+  final NotificationService _notificationService = NotificationService();
+
   @override
   void initState() { //Widget khởi tạo lần đầu tiên 
     super.initState();
-    fetchUserData(); // Lấy thông tin người dùng từ Firestore
+    fetchUserData();
+    
+    // Khởi tạo các controller
+    _titleController = TextEditingController();
+    _bodyController = TextEditingController();
+  }
+  
+  @override
+  void dispose() {
+    // Giải phóng các controller khi widget bị hủy
+    _titleController.dispose();
+    _bodyController.dispose();
+    super.dispose();
   }
 
   Future<void> fetchUserData() async {
@@ -441,239 +460,6 @@ class _HomeState extends State<Home> {
     );
   }
 
-  // Widget cho tab Tài khoản
-  // Widget buildUserSettingsTab() {
-  //   if (!isLoggedIn) {
-  //     return Center(
-  //       child: Column(
-  //         mainAxisAlignment: MainAxisAlignment.center,
-  //         children: [
-  //           Icon(
-  //             Icons.account_circle,
-  //             size: 80,
-  //             color: Colors.grey,
-  //           ),
-  //           SizedBox(height: 20),
-  //           Text(
-  //             'Bạn chưa đăng nhập',
-  //             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  //           ),
-  //           SizedBox(height: 20),
-  //           ElevatedButton(
-  //             onPressed: () {
-  //               Navigator.pushNamed(context, '/dangnhap').then((_) {
-  //                 fetchUserData();
-  //               });
-  //             },
-  //             style: ElevatedButton.styleFrom(
-  //               backgroundColor: Theme.of(context).colorScheme.primary,
-  //               foregroundColor: Colors.white,
-  //               padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-  //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(8),
-  //               ),
-  //             ),
-  //             child: Text('Đăng nhập ngay'),
-  //           ),
-  //         ],
-  //       ),
-  //     );
-  //   }
-
-  //   // Nếu đã đăng nhập, hiển thị thông tin tài khoản
-  //   return SingleChildScrollView(
-  //     padding: EdgeInsets.all(16),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.center,
-  //       children: [
-  //         // Ảnh đại diện
-  //         CircleAvatar(
-  //           radius: 60,
-  //           backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-  //           child: Text(
-  //             userData?['name']?.substring(0, 1).toUpperCase() ?? 'A',
-  //             style: TextStyle(
-  //               fontSize: 48, 
-  //               fontWeight: FontWeight.bold,
-  //               color: Theme.of(context).colorScheme.primary,
-  //             ),
-  //           ),
-  //         ),
-  //         SizedBox(height: 16),
-          
-  //         // Tên người dùng
-  //         Text(
-  //           userData?['name'] ?? 'Người dùng',
-  //           style: TextStyle(
-  //             fontSize: 24,
-  //             fontWeight: FontWeight.bold,
-  //           ),
-  //         ),
-          
-  //         // Badge Admin nếu có
-  //         if (userData?.containsKey('isAdmin') == true && userData?['isAdmin'] == true)
-  //           Container(
-  //             margin: EdgeInsets.symmetric(vertical: 8),
-  //             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-  //             decoration: BoxDecoration(
-  //               color: Colors.amber,
-  //               borderRadius: BorderRadius.circular(20),
-  //             ),
-  //             child: Row(
-  //               mainAxisSize: MainAxisSize.min,
-  //               children: [
-  //                 Icon(Icons.star, color: Colors.white, size: 16),
-  //                 SizedBox(width: 4),
-  //                 Text(
-  //                   'Quản trị viên',
-  //                   style: TextStyle(
-  //                     color: Colors.white,
-  //                     fontWeight: FontWeight.bold,
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-          
-  //         SizedBox(height: 30),
-          
-  //         // Thông tin chi tiết
-  //         Card(
-  //           elevation: 4,
-  //           shape: RoundedRectangleBorder(
-  //             borderRadius: BorderRadius.circular(12),
-  //           ),
-  //           child: Padding(
-  //             padding: EdgeInsets.all(16),
-  //             child: Column(
-  //               children: [
-  //                 // Tiêu đề
-  //                 Text(
-  //                   'Thông tin cá nhân',
-  //                   style: TextStyle(
-  //                     fontSize: 18,
-  //                     fontWeight: FontWeight.bold,
-  //                     color: Theme.of(context).colorScheme.primary,
-  //                   ),
-  //                 ),
-  //                 Divider(height: 30),
-                  
-  //                 // Số điện thoại
-  //                 buildInfoItem(
-  //                   icon: Icons.phone,
-  //                   title: 'Số điện thoại',
-  //                   value: userData?['phone'] ?? 'Không có',
-  //                 ),
-                  
-  //                 // Ngày tạo tài khoản
-  //                 buildInfoItem(
-  //                   icon: Icons.calendar_today,
-  //                   title: 'Ngày tạo tài khoản',
-  //                   value: userData?['created_at'] != null
-  //                     ? _formatDate(userData?['created_at'])
-  //                     : 'Không có thông tin',
-  //                 ),
-                  
-  //                 // Trạng thái
-  //                 buildInfoItem(
-  //                   icon: Icons.verified_user,
-  //                   title: 'Trạng thái',
-  //                   value: 'Đang hoạt động',
-  //                   valueColor: Colors.green,
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //         ),
-          
-  //         SizedBox(height: 20),
-          
-  //         // Các tùy chọn
-  //         Card(
-  //           elevation: 4,
-  //           shape: RoundedRectangleBorder(
-  //             borderRadius: BorderRadius.circular(12),
-  //           ),
-  //           child: Column(
-  //             children: [
-  //               buildOptionItem(
-  //                 icon: Icons.security,
-  //                 title: 'Đổi mật khẩu',
-  //                 onTap: () {
-  //                   // Xử lý đổi mật khẩu
-  //                   showDialog(
-  //                     context: context,
-  //                     builder: (_) => AlertDialog(
-  //                       title: Text('Thông báo'),
-  //                       content: Text('Tính năng đổi mật khẩu sẽ sớm được cập nhật!'),
-  //                       actions: [
-  //                         TextButton(
-  //                           onPressed: () => Navigator.pop(context),
-  //                           child: Text('Đóng'),
-  //                         ),
-  //                       ],
-  //                     ),
-  //                   );
-  //                 },
-  //               ),
-  //               Divider(height: 1),
-  //               buildOptionItem(
-  //                 icon: Icons.edit,
-  //                 title: 'Chỉnh sửa thông tin',
-  //                 onTap: () {
-  //                   // Xử lý chỉnh sửa thông tin
-  //                   showDialog(
-  //                     context: context,
-  //                     builder: (_) => AlertDialog(
-  //                       title: Text('Thông báo'),
-  //                       content: Text('Tính năng chỉnh sửa thông tin sẽ sớm được cập nhật!'),
-  //                       actions: [
-  //                         TextButton(
-  //                           onPressed: () => Navigator.pop(context),
-  //                           child: Text('Đóng'),
-  //                         ),
-  //                       ],
-  //                     ),
-  //                   );
-  //                 },
-  //               ),
-  //               Divider(height: 1),
-  //               buildOptionItem(
-  //                 icon: Icons.logout,
-  //                 title: 'Đăng xuất',
-  //                 onTap: () async {
-  //                   showDialog(
-  //                     context: context,
-  //                     builder: (BuildContext context) {
-  //                       return AlertDialog(
-  //                         title: Text('Đăng xuất'),
-  //                         content: Text('Bạn có chắc chắn muốn đăng xuất?'),
-  //                         actions: [
-  //                           TextButton(
-  //                             onPressed: () => Navigator.pop(context),
-  //                             child: Text('Hủy'),
-  //                           ),
-  //                           TextButton(
-  //                             onPressed: () async {
-  //                               Navigator.pop(context);
-  //                               await logout();
-  //                             },
-  //                             child: Text('Đăng xuất'),
-  //                           ),
-  //                         ],
-  //                       );
-  //                     },
-  //                   );
-  //                 },
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   // Định dạng ngày tháng từ Timestamp
   String _formatDate(Timestamp timestamp) {
     final date = timestamp.toDate();
@@ -923,9 +709,7 @@ class _HomeState extends State<Home> {
     // Form gửi thông báo đến người dùng 
     // Lịch sử thông báo đã gửi
   Widget buildAdminNotificationsTab() {
-    final TextEditingController _titleController = TextEditingController();
-    final TextEditingController _bodyController = TextEditingController();
-    final NotificationService _notificationService = NotificationService();
+    
     
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
@@ -1001,15 +785,24 @@ class _HomeState extends State<Home> {
                               ),
                               TextButton(
                                 onPressed: () async {
+                                  // Lưu context gốc trước khi đóng dialog
+                                  final originContext = context;
                                   Navigator.pop(context);
+                                  
+                                  // Tạo một biến để theo dõi dialog loading
+                                  BuildContext? loadingDialogContext;
                                   
                                   // Hiển thị loading
                                   showDialog(
-                                    context: context,
+                                    context: originContext,
                                     barrierDismissible: false,
-                                    builder: (context) => Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
+                                    builder: (context) {
+                                      // Lưu context của dialog loading
+                                      loadingDialogContext = context;
+                                      return Center(
+                                        child: CircularProgressIndicator(),
+                                      );
+                                    },
                                   );
                                   
                                   try {
@@ -1020,37 +813,45 @@ class _HomeState extends State<Home> {
                                       topic: 'all',
                                     );
                                     
-                                    // Đóng loading dialog
-                                    Navigator.pop(context);
+                                    // Đóng dialog loading nếu nó vẫn hiển thị
+                                    if (loadingDialogContext != null) {
+                                      Navigator.of(loadingDialogContext!).pop();
+                                    }
                                     
-                                    // Hiển thị kết quả
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          success 
+                                    // Sử dụng context gốc để hiển thị thông báo kết quả
+                                    if (originContext.mounted) {
+                                      ScaffoldMessenger.of(originContext).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            success 
                                               ? 'Thông báo đã được gửi thành công!'
                                               : 'Không thể gửi thông báo. Vui lòng thử lại sau.',
+                                          ),
+                                          backgroundColor: success ? Colors.green : Colors.red,
                                         ),
-                                        backgroundColor: success ? Colors.green : Colors.red,
-                                      ),
-                                    );
-                                    
-                                    if (success) {
-                                      // Xóa input nếu gửi thành công
-                                      _titleController.clear();
-                                      _bodyController.clear();
+                                      );
+                                      
+                                      if (success) {
+                                        // Xóa input nếu gửi thành công
+                                        _titleController.clear();
+                                        _bodyController.clear();
+                                      }
                                     }
                                   } catch (e) {
-                                    // Đóng loading dialog
-                                    Navigator.pop(context);
+                                    // Đóng dialog loading nếu nó vẫn hiển thị
+                                    if (loadingDialogContext != null) {
+                                      Navigator.of(loadingDialogContext!).pop();
+                                    }
                                     
                                     // Hiển thị lỗi
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Lỗi: $e'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
+                                    if (originContext.mounted) {
+                                      ScaffoldMessenger.of(originContext).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Lỗi: $e'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
                                   }
                                 },
                                 child: Text('Gửi'),

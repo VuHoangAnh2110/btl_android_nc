@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 class NotificationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final String _apiUrl = 'https://android-nc-fcm.onrender.com/api/send-notification';
   
   // Lưu thông báo vào Firestore
   Future<void> saveNotification({
@@ -27,8 +28,7 @@ class NotificationService {
     }
   }
   
-  // Gửi thông báo (thực tế phải được triển khai ở phía server)
-  // Đây chỉ là mô phỏng, cần thay thế bằng Cloud Functions hoặc Backend Service
+  // Gửi thông báo qua API
   Future<bool> sendNotification({
     required String title,
     required String body,
@@ -36,18 +36,38 @@ class NotificationService {
     Map<String, dynamic>? data,
   }) async {
     try {
-      // Lưu thông báo vào Firestore
-      await saveNotification(
-        title: title,
-        body: body,
-        topic: topic,
-        additionalData: data,
+      // Chuẩn bị dữ liệu gửi đi
+      final payload = {
+        'title': title,
+        'body': body,
+      };
+      
+      // Thực hiện POST request
+      final response = await http.post(
+        Uri.parse(_apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(payload),
       );
       
-      // Mô phỏng việc gửi thông báo thành công
-      // Trong thực tế, bạn cần gọi API hoặc Cloud Functions
-      
-      return true;
+      // Kiểm tra response
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        debugPrint('Gửi thông báo thành công: ${response.body}');
+        
+        // Lưu thông báo vào Firestore
+        await saveNotification(
+          title: title,
+          body: body,
+          topic: topic,
+          additionalData: data,
+        );
+        
+        return true;
+      } else {
+        debugPrint('Lỗi khi gửi thông báo: ${response.statusCode} - ${response.body}');
+        return false;
+      }
     } catch (e) {
       debugPrint('Lỗi khi gửi thông báo: $e');
       return false;
