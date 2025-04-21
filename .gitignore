@@ -82,3 +82,20 @@ android/key.jks
 # Chứa thông tin key ứng dụng, không commit!
 android/app/key.properties 
 lib/firebase_options.dart
+
+# Binary files
+*.bin
+
+# macOS
+macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Windows
+windows/flutter/generated_plugin_registrant.cc
+windows/flutter/generated_plugins.cmake
+
+# Các file tạo tự động khác
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+**/GeneratedPluginRegistrant.*
+
