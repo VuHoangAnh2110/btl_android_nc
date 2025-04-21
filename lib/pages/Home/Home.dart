@@ -14,11 +14,28 @@ class _HomeState extends State<Home> {
   int _selectedIndex = 0;
   Map<String, dynamic>? userData;
   bool isLoggedIn = false;
+  
+  // Thêm các controller vào đây - là thuộc tính của lớp
+  late TextEditingController _titleController;
+  late TextEditingController _bodyController;
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
     super.initState();
     fetchUserData();
+    
+    // Khởi tạo các controller
+    _titleController = TextEditingController();
+    _bodyController = TextEditingController();
+  }
+  
+  @override
+  void dispose() {
+    // Giải phóng các controller khi widget bị hủy
+    _titleController.dispose();
+    _bodyController.dispose();
+    super.dispose();
   }
 
   Future<void> fetchUserData() async {
@@ -433,10 +450,6 @@ class _HomeState extends State<Home> {
 
   // Widget cho tab Cài đặt
   Widget buildSettingsTab() {
-    final TextEditingController _titleController = TextEditingController();
-    final TextEditingController _bodyController = TextEditingController();
-    final NotificationService _notificationService = NotificationService();
-    
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -511,15 +524,24 @@ class _HomeState extends State<Home> {
                               ),
                               TextButton(
                                 onPressed: () async {
+                                  // Lưu context gốc trước khi đóng dialog
+                                  final originContext = context;
                                   Navigator.pop(context);
+                                  
+                                  // Tạo một biến để theo dõi dialog loading
+                                  BuildContext? loadingDialogContext;
                                   
                                   // Hiển thị loading
                                   showDialog(
-                                    context: context,
+                                    context: originContext,
                                     barrierDismissible: false,
-                                    builder: (context) => Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
+                                    builder: (context) {
+                                      // Lưu context của dialog loading
+                                      loadingDialogContext = context;
+                                      return Center(
+                                        child: CircularProgressIndicator(),
+                                      );
+                                    },
                                   );
                                   
                                   try {
@@ -530,37 +552,45 @@ class _HomeState extends State<Home> {
                                       topic: 'all',
                                     );
                                     
-                                    // Đóng loading dialog
-                                    Navigator.pop(context);
+                                    // Đóng dialog loading nếu nó vẫn hiển thị
+                                    if (loadingDialogContext != null) {
+                                      Navigator.of(loadingDialogContext!).pop();
+                                    }
                                     
-                                    // Hiển thị kết quả
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          success 
+                                    // Sử dụng context gốc để hiển thị thông báo kết quả
+                                    if (originContext.mounted) {
+                                      ScaffoldMessenger.of(originContext).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            success 
                                               ? 'Thông báo đã được gửi thành công!'
                                               : 'Không thể gửi thông báo. Vui lòng thử lại sau.',
+                                          ),
+                                          backgroundColor: success ? Colors.green : Colors.red,
                                         ),
-                                        backgroundColor: success ? Colors.green : Colors.red,
-                                      ),
-                                    );
-                                    
-                                    if (success) {
-                                      // Xóa input nếu gửi thành công
-                                      _titleController.clear();
-                                      _bodyController.clear();
+                                      );
+                                      
+                                      if (success) {
+                                        // Xóa input nếu gửi thành công
+                                        _titleController.clear();
+                                        _bodyController.clear();
+                                      }
                                     }
                                   } catch (e) {
-                                    // Đóng loading dialog
-                                    Navigator.pop(context);
+                                    // Đóng dialog loading nếu nó vẫn hiển thị
+                                    if (loadingDialogContext != null) {
+                                      Navigator.of(loadingDialogContext!).pop();
+                                    }
                                     
                                     // Hiển thị lỗi
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Lỗi: $e'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
+                                    if (originContext.mounted) {
+                                      ScaffoldMessenger.of(originContext).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Lỗi: $e'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
                                   }
                                 },
                                 child: Text('Gửi'),
