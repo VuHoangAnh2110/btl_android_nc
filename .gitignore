@@ -83,6 +83,9 @@ android/key.jks
 android/app/key.properties 
 lib/firebase_options.dart
 
+android/app/.cxx/
+# Android NDK configure_fingerprint files
+android/app/.cxx/**/configure_fingerprint.bin
 # Binary files
 *.bin
 
