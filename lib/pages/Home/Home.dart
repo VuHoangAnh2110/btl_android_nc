@@ -1,15 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:btl_android_nc/services/notification_service.dart';
-// import 'package:btl_android_nc/services/firebase_messaging_service.dart';
-
-// import '../../services/auth_services.dart';
-// import '../../services/firebase_service.dart';
-
-// import '../../utils/date_formatter.dart';
-// import '../../widgets/common/info_item.dart';
-// import '../../widgets/common/option_item.dart';
-// import '../../widgets/common/status_badge.dart';
 import 'tabs/admin/admin_users_tab.dart';
 import 'tabs/admin/admin_notifications_tab.dart';
 import 'tabs/admin/admin_relief_requests_tab.dart';
@@ -18,10 +8,9 @@ import 'tabs/user/user_relief_request_tab.dart';
 import 'tabs/user/user_settings_tab.dart';
 
 
-
 // Cấu trúc dữ liệu 
 // users: Thông tin người dùng (name, phone, password, isAdmin, isLoggedIn)
-// reliefRequests gồm có title, description, location, status, userId, createdAt
+// tblYeuCau gồm có tiêu đề, mô tả, vị trí, trạng thái, mức độ, userId, thời gian tạo
 // notifications: Thông báo đã gửi
 
 
