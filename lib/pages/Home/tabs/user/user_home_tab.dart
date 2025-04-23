@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../widgets/common/feature_card.dart';
 import '../../../../utils/date_formatter.dart';
+import '../../../../services/news_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../../../pages/news_detail_screen.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/intl.dart';
 
 class UserHomeTab extends StatelessWidget {
   final Map<String, dynamic>? userData;
@@ -115,42 +120,123 @@ class UserHomeTab extends StatelessWidget {
   }
 
   Widget _buildNewsSection() {
-    // Thay thế bằng code lấy tin tức từ RSS sau khi tạo NewsService
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      itemCount: 3,
-      itemBuilder: (context, index) {
-        return Card(
-          margin: EdgeInsets.only(bottom: 15),
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: ListTile(
-            contentPadding: EdgeInsets.all(15),
-            leading: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.blue[100],
-                borderRadius: BorderRadius.circular(8),
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: NewsService.fetchWeatherNews(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red, size: 50),
+                  SizedBox(height: 16),
+                  Text('Không thể tải tin tức: ${snapshot.error}'),
+                ],
               ),
-              child: Icon(Icons.cloudy_snowing, color: Colors.blue),
             ),
-            title: Text(
-              'Dự báo thời tiết ngày ${index + 1}/5/2025',
-              style: TextStyle(fontWeight: FontWeight.bold),
+          );
+        }
+
+        final newsList = snapshot.data ?? [];
+
+        if (newsList.isEmpty) {
+          return Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: Text('Không có tin tức nào')),
             ),
-            subtitle: Text(
-              'Cảnh báo mưa lớn tại khu vực miền Trung và Tây Nguyên...',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            onTap: () {
-              // Xử lý khi nhấn vào tin tức
-            },
-          ),
+          );
+        }
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          itemCount: newsList.length > 5 ? 5 : newsList.length,
+          itemBuilder: (context, index) {
+            final item = newsList[index];
+            final String imageUrl = item['imageUrl'] ?? '';
+
+            return Card(
+              margin: EdgeInsets.only(bottom: 15),
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: ListTile(
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                leading: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.blue[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: imageUrl.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: imageUrl,
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) => Icon(
+                              Icons.cloudy_snowing,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        )
+                      : Icon(Icons.cloudy_snowing, color: Colors.blue),
+                ),
+                title: Text(
+                  item['title'] ?? 'Không có tiêu đề',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item['description'] ?? '',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 4),
+                    if (item['pubDate'] != null)
+                      Text(
+                        'Đăng: ${_formatNewsDate(item['pubDate'])}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.grey,
+                        ),
+                      ),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NewsDetailScreen(
+                        title: item['title'] ?? 'Không có tiêu đề',
+                        link: item['link'] ?? '',
+                        description: item['description'] ?? '',
+                        imageUrl: item['imageUrl'],
+                        pubDate: item['pubDate'],
+                      ),
+                    ),
+                  );
+                },
+                isThreeLine: true,
+              ),
+            );
+          },
         );
       },
     );
@@ -257,5 +343,9 @@ class UserHomeTab extends StatelessWidget {
         );
       },
     );
+  }
+
+  String _formatNewsDate(DateTime date) {
+    return DateFormat('dd/MM/yyyy HH:mm').format(date);
   }
 }
