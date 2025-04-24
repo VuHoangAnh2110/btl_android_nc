@@ -33,29 +33,12 @@ class _HomeState extends State<Home> {
   bool isActuallyAdmin = false; // Biến mới để theo dõi quyền admin thực tế
 
   final FirebaseFirestore db = FirebaseFirestore.instance;
-  
-  // Thêm các controller vào đây - là thuộc tính của lớp
-  // late TextEditingController _titleController;
-  // late TextEditingController _bodyController;
-  // final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() { //Widget khởi tạo lần đầu tiên 
     super.initState();
     fetchUserData();
-    
-    // // Khởi tạo các controller
-    // _titleController = TextEditingController();
-    // _bodyController = TextEditingController();
   }
-  
-  // @override
-  // void dispose() {
-  //   // Giải phóng các controller khi widget bị hủy
-  //   _titleController.dispose();
-  //   _bodyController.dispose();
-  //   super.dispose();
-  // }
 
   Future<void> fetchUserData() async {
     try {
@@ -188,10 +171,8 @@ class _HomeState extends State<Home> {
                 // buildAdminNotificationsTab(),
                 // buildAdminReliefRequestsTab(),
                 AdminUsersTab(userData: userData, isLoggedIn: isLoggedIn),
-                AdminNotificationsTab(
-                    userData: userData, isLoggedIn: isLoggedIn),
-                AdminReliefRequestsTab(
-                    userData: userData, isLoggedIn: isLoggedIn),
+                AdminNotificationsTab(userData: userData, isLoggedIn: isLoggedIn),
+                AdminReliefRequestsTab(userData: userData, isLoggedIn: isLoggedIn),
               ]
             : [
                 // Các tab cho người dùng thường
@@ -199,8 +180,7 @@ class _HomeState extends State<Home> {
                 // buildUserReliefRequestTab(),
                 // buildUserSettingsTab(),
                 UserHomeTab(userData: userData, isLoggedIn: isLoggedIn),
-                UserReliefRequestTab(
-                    userData: userData, isLoggedIn: isLoggedIn),
+                UserReliefRequestTab(userData: userData, isLoggedIn: isLoggedIn),
                 UserSettingsTab(
                     userData: userData,
                     isLoggedIn: isLoggedIn,

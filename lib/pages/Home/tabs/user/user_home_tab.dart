@@ -161,9 +161,9 @@ class UserHomeTab extends StatelessWidget {
 
     return StreamBuilder<QuerySnapshot>(
       stream: db
-          .collection('reliefRequests')
-          .where('status', isEqualTo: 'approved')
-          .orderBy('createdAt', descending: true)
+          .collection('tblYeuCau')
+          .where('sTrangThai', isEqualTo: 'chấp nhận')
+          .orderBy('tNgayGui', descending: true)
           .limit(5)
           .snapshots(),
       builder: (context, snapshot) {
@@ -208,7 +208,7 @@ class UserHomeTab extends StatelessWidget {
               child: ListTile(
                 contentPadding: EdgeInsets.all(12),
                 title: Text(
-                  request['title'] ?? 'Yêu cầu cứu trợ',
+                  request['sTieuDe'] ?? 'Yêu cầu cứu trợ',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: Column(
@@ -216,7 +216,7 @@ class UserHomeTab extends StatelessWidget {
                   children: [
                     SizedBox(height: 4),
                     Text(
-                      request['description'] ?? 'Không có mô tả',
+                      request['sMoTa'] ?? 'Không có mô tả',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -227,7 +227,7 @@ class UserHomeTab extends StatelessWidget {
                         SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            request['location'] ?? 'Không có địa điểm',
+                            request['sViTri'] ?? 'Không có địa điểm',
                             style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                         ),
