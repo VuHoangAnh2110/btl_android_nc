@@ -47,6 +47,13 @@ dependencies:
   permission_handler: ^11.0.0
   package_info_plus: ^4.0.1
 
+  # Package để xử lý ảnh
+  # image_picker: ^1.0.4
+  
+  # Package để lấy vị trí
+  geolocator: ^10.0.1
+  geocoding: ^2.1.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -10,9 +10,9 @@ class StatusBadge extends StatelessWidget {
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'approved':
+      case 'chấp nhận':
         return Colors.green;
-      case 'rejected':
+      case 'từ chối':
         return Colors.red;
       default:
         return Colors.orange;
@@ -21,9 +21,9 @@ class StatusBadge extends StatelessWidget {
 
   String _getStatusText(String status) {
     switch (status) {
-      case 'approved':
+      case 'chấp nhận':
         return 'Đã phê duyệt';
-      case 'rejected':
+      case 'từ chối':
         return 'Đã từ chối';
       default:
         return 'Đang chờ';

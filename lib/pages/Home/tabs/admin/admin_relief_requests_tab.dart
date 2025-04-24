@@ -59,9 +59,9 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
           child: TabBarView(
             controller: _tabController,
             children: [
-              _buildRequestsList('pending'),
-              _buildRequestsList('approved'),
-              _buildRequestsList('rejected'),
+              _buildRequestsList('chờ duyệt'),
+              _buildRequestsList('chấp nhận'),
+              _buildRequestsList('từ chối'),
             ],
           ),
         ),
@@ -72,9 +72,9 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
   Widget _buildRequestsList(String status) {
     return StreamBuilder<QuerySnapshot>(
       stream: db
-          .collection('reliefRequests')
-          .where('status', isEqualTo: status)
-          .orderBy('createdAt', descending: true)
+          .collection('tblYeuCau')
+          .where('sTrangThai', isEqualTo: status)
+          .orderBy('tNgayGui', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -93,9 +93,9 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                 Icon(Icons.inbox, size: 64, color: Colors.grey[400]),
                 SizedBox(height: 16),
                 Text(
-                  status == 'pending'
+                  status == 'chờ duyệt'
                       ? 'Không có yêu cầu nào đang chờ duyệt'
-                      : status == 'approved'
+                      : status == 'chấp nhận'
                           ? 'Chưa có yêu cầu nào được duyệt'
                           : 'Chưa có yêu cầu nào bị từ chối',
                   style: TextStyle(
@@ -112,8 +112,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
           padding: EdgeInsets.all(16),
           itemCount: snapshot.data!.docs.length,
           itemBuilder: (context, index) {
-            var request =
-                snapshot.data!.docs[index].data() as Map<String, dynamic>;
+            var request = snapshot.data!.docs[index].data() as Map<String, dynamic>;
             var requestId = snapshot.data!.docs[index].id;
 
             return Card(
@@ -128,7 +127,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
               ),
               child: ExpansionTile(
                 title: Text(
-                  request['title'] ?? 'Yêu cầu cứu trợ',
+                  request['sTieuDe'] ?? 'Yêu cầu cứu trợ',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: Column(
@@ -151,7 +150,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                         Icon(Icons.access_time, size: 14, color: Colors.grey),
                         SizedBox(width: 4),
                         Text(
-                          'Ngày gửi: ${DateFormatter.formatDate(request['createdAt'])}',
+                          'Ngày gửi: ${DateFormatter.formatDate(request['tNgayGui'])}',
                           style: TextStyle(fontSize: 14),
                         ),
                       ],
@@ -173,7 +172,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                           ),
                         ),
                         SizedBox(height: 8),
-                        Text(request['description'] ?? 'Không có mô tả'),
+                        Text(request['sMoTa'] ?? 'Không có mô tả'),
                         SizedBox(height: 16),
 
                         Text(
@@ -190,7 +189,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                             SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                  request['location'] ?? 'Không có địa điểm'),
+                                  request['sViTri'] ?? 'Không có địa điểm'),
                             ),
                           ],
                         ),
@@ -217,7 +216,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                         SizedBox(height: 20),
 
                         // Buttons
-                        if (status == 'pending')
+                        if (status == 'chờ duyệt')
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
@@ -226,9 +225,9 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                                   // Xử lý từ chối
                                   try {
                                     await db
-                                        .collection('reliefRequests')
+                                        .collection('tblYeuCau')
                                         .doc(requestId)
-                                        .update({'status': 'rejected'});
+                                        .update({'sTrangThai': 'từ chối'});
 
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -252,9 +251,9 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                                   // Xử lý phê duyệt
                                   try {
                                     await db
-                                        .collection('reliefRequests')
+                                        .collection('tblYeuCau')
                                         .doc(requestId)
-                                        .update({'status': 'approved'});
+                                        .update({'sTrangThai': 'chấp nhận'});
 
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -278,7 +277,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                             ],
                           ),
 
-                        if (status != 'pending')
+                        if (status != 'chờ duyệt')
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
@@ -302,7 +301,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                                             Navigator.pop(context);
                                             try {
                                               await db
-                                                  .collection('reliefRequests')
+                                                  .collection('tblYeuCau')
                                                   .doc(requestId)
                                                   .delete();
 
@@ -350,9 +349,9 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'approved':
+      case 'chấp nhận':
         return Colors.green;
-      case 'rejected':
+      case 'từ chối':
         return Colors.red;
       default:
         return Colors.orange;

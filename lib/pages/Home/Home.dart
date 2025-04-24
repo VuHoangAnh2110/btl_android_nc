@@ -1,15 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:btl_android_nc/services/notification_service.dart';
-// import 'package:btl_android_nc/services/firebase_messaging_service.dart';
-
-// import '../../services/auth_services.dart';
-// import '../../services/firebase_service.dart';
-
-// import '../../utils/date_formatter.dart';
-// import '../../widgets/common/info_item.dart';
-// import '../../widgets/common/option_item.dart';
-// import '../../widgets/common/status_badge.dart';
 import 'tabs/admin/admin_users_tab.dart';
 import 'tabs/admin/admin_notifications_tab.dart';
 import 'tabs/admin/admin_relief_requests_tab.dart';
@@ -18,10 +8,9 @@ import 'tabs/user/user_relief_request_tab.dart';
 import 'tabs/user/user_settings_tab.dart';
 
 
-
 // Cấu trúc dữ liệu 
 // users: Thông tin người dùng (name, phone, password, isAdmin, isLoggedIn)
-// reliefRequests gồm có title, description, location, status, userId, createdAt
+// tblYeuCau gồm có tiêu đề, mô tả, vị trí, trạng thái, mức độ, userId, thời gian tạo
 // notifications: Thông báo đã gửi
 
 
@@ -44,29 +33,12 @@ class _HomeState extends State<Home> {
   bool isActuallyAdmin = false; // Biến mới để theo dõi quyền admin thực tế
 
   final FirebaseFirestore db = FirebaseFirestore.instance;
-  
-  // Thêm các controller vào đây - là thuộc tính của lớp
-  // late TextEditingController _titleController;
-  // late TextEditingController _bodyController;
-  // final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() { //Widget khởi tạo lần đầu tiên 
     super.initState();
     fetchUserData();
-    
-    // // Khởi tạo các controller
-    // _titleController = TextEditingController();
-    // _bodyController = TextEditingController();
   }
-  
-  // @override
-  // void dispose() {
-  //   // Giải phóng các controller khi widget bị hủy
-  //   _titleController.dispose();
-  //   _bodyController.dispose();
-  //   super.dispose();
-  // }
 
   Future<void> fetchUserData() async {
     try {
@@ -199,10 +171,8 @@ class _HomeState extends State<Home> {
                 // buildAdminNotificationsTab(),
                 // buildAdminReliefRequestsTab(),
                 AdminUsersTab(userData: userData, isLoggedIn: isLoggedIn),
-                AdminNotificationsTab(
-                    userData: userData, isLoggedIn: isLoggedIn),
-                AdminReliefRequestsTab(
-                    userData: userData, isLoggedIn: isLoggedIn),
+                AdminNotificationsTab(userData: userData, isLoggedIn: isLoggedIn),
+                AdminReliefRequestsTab(userData: userData, isLoggedIn: isLoggedIn),
               ]
             : [
                 // Các tab cho người dùng thường
@@ -210,8 +180,7 @@ class _HomeState extends State<Home> {
                 // buildUserReliefRequestTab(),
                 // buildUserSettingsTab(),
                 UserHomeTab(userData: userData, isLoggedIn: isLoggedIn),
-                UserReliefRequestTab(
-                    userData: userData, isLoggedIn: isLoggedIn),
+                UserReliefRequestTab(userData: userData, isLoggedIn: isLoggedIn),
                 UserSettingsTab(
                     userData: userData,
                     isLoggedIn: isLoggedIn,
