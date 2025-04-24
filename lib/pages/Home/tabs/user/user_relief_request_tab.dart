@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'dart:io';
+import 'package:dio/dio.dart';
 
 class UserReliefRequestTab extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -27,6 +28,8 @@ class _UserReliefRequestTabState extends State<UserReliefRequestTab> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
+  // Đối tượng Dio để tải ảnh
+  final Dio _dio = Dio();
   // Khởi tạo kết nối Firestore để làm việc với dữ liệu:
   final FirebaseFirestore db = FirebaseFirestore.instance;
   // final FirebaseStorage _storage = FirebaseStorage.instance;
@@ -102,24 +105,35 @@ class _UserReliefRequestTabState extends State<UserReliefRequestTab> {
     );
   }
 
-  // Hàm tải ảnh lên Firebase Storage
-  // Future<String?> _uploadImage() async {
-  //   if (_selectedImage == null) return null;
-
-  //   try {
-  //     final String fileName = 'yeucau_${DateTime.now().millisecondsSinceEpoch}.jpg';
-  //     final Reference storageRef = _storage.ref().child('relief_requests_images').child(fileName);
+  // Hàm tải ảnh lên dịch vụ ImgBB thay vì Firebase Storage
+  Future<String?> _uploadImageToImgBB() async {
+    if (_selectedImage == null) return null;
+    
+    try {
+      // Chuẩn bị FormData để tải lên
+      FormData formData = FormData.fromMap({
+        'key': 'c0b40e22c1f72d0e95a4b227825a961b', // API key của ImgBB (nên đặt vào biến môi trường)
+        'image': await MultipartFile.fromFile(_selectedImage!.path),
+      });
       
-  //     final UploadTask uploadTask = storageRef.putFile(_selectedImage!);
-  //     final TaskSnapshot taskSnapshot = await uploadTask;
+      // Gọi API của ImgBB
+      final response = await _dio.post(
+        'https://api.imgbb.com/1/upload',
+        data: formData,
+      );
       
-  //     final String downloadURL = await taskSnapshot.ref.getDownloadURL();
-  //     return downloadURL;
-  //   } catch (e) {
-  //     print('Lỗi khi tải ảnh: $e');
-  //     return null;
-  //   }
-  // }
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        // Trả về URL của ảnh đã tải lên
+        return response.data['data']['url'];
+      } else {
+        print('Lỗi khi tải ảnh lên ImgBB: ${response.data}');
+        return null;
+      }
+    } catch (e) {
+      print('Lỗi khi tải ảnh: $e');
+      return null;
+    }
+  }
 
   // Hàm kiểm tra quyền truy cập vị trí
   Future<bool> _handleLocationPermission() async {
@@ -370,53 +384,53 @@ class _UserReliefRequestTabState extends State<UserReliefRequestTab> {
                                   width: 1,
                                 ),
                               ),
-                            //   child: _selectedImage == null
-                            //       ? Center(
-                            //           child: IconButton(
-                            //             icon: Icon(
-                            //               Icons.add_photo_alternate,
-                            //               size: 50,
-                            //               color: Colors.grey[600],
-                            //             ),
-                            //             onPressed: _showImageSourceDialog,
-                            //           ),
-                            //         )
-                            //       : Stack(
-                            //           children: [
-                            //             Center(
-                            //               child: Image.file(
-                            //                 _selectedImage!,
-                            //                 fit: BoxFit.cover,
-                            //                 width: double.infinity,
-                            //                 height: double.infinity,
-                            //               ),
-                            //             ),
-                            //             Positioned(
-                            //               top: 5,
-                            //               right: 5,
-                            //               child: Container(
-                            //                 decoration: BoxDecoration(
-                            //                   color: Colors.black.withOpacity(0.6),
-                            //                   shape: BoxShape.circle,
-                            //                 ),
-                            //                 child: IconButton(
-                            //                   icon: Icon(
-                            //                     Icons.close,
-                            //                     color: Colors.white,
-                            //                     size: 20,
-                            //                   ),
-                            //                   padding: EdgeInsets.all(5),
-                            //                   constraints: BoxConstraints(),
-                            //                   onPressed: () {
-                            //                     setState(() {
-                            //                       _selectedImage = null;
-                            //                     });
-                            //                   },
-                            //                 ),
-                            //               ),
-                            //             ),
-                            //           ],
-                            //         ),
+                              child: _selectedImage == null
+                                  ? Center(
+                                      child: IconButton(
+                                        icon: Icon(
+                                          Icons.add_photo_alternate,
+                                          size: 50,
+                                          color: Colors.grey[600],
+                                        ),
+                                        onPressed: _showImageSourceDialog,
+                                      ),
+                                    )
+                                  : Stack(
+                                      children: [
+                                        Center(
+                                          child: Image.file(
+                                            _selectedImage!,
+                                            fit: BoxFit.cover,
+                                            width: double.infinity,
+                                            height: double.infinity,
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: 5,
+                                          right: 5,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.black.withOpacity(0.6),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: IconButton(
+                                              icon: Icon(
+                                                Icons.close,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
+                                              padding: EdgeInsets.all(5),
+                                              constraints: BoxConstraints(),
+                                              onPressed: () {
+                                                setState(() {
+                                                  _selectedImage = null;
+                                                });
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                             ),
                           ],
                         ),
@@ -442,10 +456,10 @@ class _UserReliefRequestTabState extends State<UserReliefRequestTab> {
                                 _isLoading = true;
                               });
                               try {
-                                // Tải ảnh lên Firebase Storage (nếu có)
+                                // Tải ảnh lên ImgBB (nếu có)
                                 // String? imageUrl;
                                 if (_selectedImage != null) {
-                                  // _imageUrl = await _uploadImage();
+                                  _imageUrl = await _uploadImageToImgBB();
                                 }
 
                                 // Tạo dữ liệu cho yêu cầu cứu trợ
