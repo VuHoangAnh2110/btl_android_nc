@@ -44,7 +44,7 @@ dependencies:
   package_info_plus: ^4.0.1
 
   # Package để xử lý ảnh
-  # image_picker: ^1.0.4
+  image_picker: ^1.0.4
   
   # Package để lấy vị trí
   geolocator: ^10.0.1

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../utils/date_formatter.dart';
 import '../../../../widgets/common/status_badge.dart';
-// import 'package:image_picker/image_picker.dart';
+import 'package:image_picker/image_picker.dart';
 // import 'package:firebase_storage/firebase_storage.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
@@ -49,58 +49,58 @@ class _UserReliefRequestTabState extends State<UserReliefRequestTab> {
   }
 
   // Hàm chọn ảnh từ thư viện
-  // Future<void> _pickImage(ImageSource source) async {
-  //   try {
-  //     final ImagePicker picker = ImagePicker();
-  //     final XFile? image = await picker.pickImage(
-  //       source: source,
-  //       maxWidth: 1280,
-  //       maxHeight: 720,
-  //       imageQuality: 80,
-  //     );
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 1280,
+        maxHeight: 720,
+        imageQuality: 80,
+      );
 
-  //     if (image != null) {
-  //       setState(() {
-  //         _selectedImage = File(image.path);
-  //       });
-  //     }
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Lỗi khi chọn ảnh: $e')),
-  //     );
-  //   }
-  // }
+      if (image != null) {
+        setState(() {
+          _selectedImage = File(image.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi chọn ảnh: $e')),
+      );
+    }
+  }
 
-  // // Hiển thị dialog chọn nguồn ảnh
-  // void _showImageSourceDialog() {
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: Text('Chọn ảnh từ'),
-  //       content: Column(
-  //         mainAxisSize: MainAxisSize.min,
-  //         children: [
-  //           ListTile(
-  //             leading: Icon(Icons.photo_library),
-  //             title: Text('Thư viện ảnh'),
-  //             onTap: () {
-  //               Navigator.pop(context);
-  //               _pickImage(ImageSource.gallery);
-  //             },
-  //           ),
-  //           ListTile(
-  //             leading: Icon(Icons.camera_alt),
-  //             title: Text('Máy ảnh'),
-  //             onTap: () {
-  //               Navigator.pop(context);
-  //               _pickImage(ImageSource.camera);
-  //             },
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
+  // Hiển thị dialog chọn nguồn ảnh
+  void _showImageSourceDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Chọn ảnh từ'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.photo_library),
+              title: Text('Thư viện ảnh'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.camera_alt),
+              title: Text('Máy ảnh'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   // Hàm tải ảnh lên Firebase Storage
   // Future<String?> _uploadImage() async {
