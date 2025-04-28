@@ -18,7 +18,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
-        android:label="btl_android_nc"
+        android:label="Hỗ trợ thiên tai"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

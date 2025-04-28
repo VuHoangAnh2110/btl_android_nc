@@ -209,8 +209,7 @@ class _HomeState extends State<Home> {
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
         setState(() {
-          _diaChiHienTai = 
-            '${place.street}, ${place.subAdministrativeArea}, ${place.administrativeArea}';
+          _diaChiHienTai = '${place.street}, ${place.subAdministrativeArea}, ${place.administrativeArea}';
         });
       }
     } catch (e) {
@@ -308,15 +307,15 @@ class _HomeState extends State<Home> {
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.people),
-                  label: 'Quản lý người dùng',
+                  label: 'Người dùng',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.notifications_active),
-                  label: 'Gửi thông báo khẩn',
+                  label: 'Thông báo khẩn',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.volunteer_activism),
-                  label: 'Yêu cầu cứu trợ',
+                  label: 'Cứu trợ',
                 ),
               ]
             : [
@@ -358,14 +357,28 @@ class _HomeState extends State<Home> {
 
           try{
             await _getCurrentLocation();
-            if (_toaDoHienTai != null && _diaChiHienTai != null) {
+            if (_toaDoHienTai == null && _diaChiHienTai == null) {
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Không thể lấy vị trí, tọa độ hiện tại')),
+              );
+            } else {
               Navigator.of(context).pop();
               showDialog(
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
                     title: Text('Gửi SOS'),
-                    content: Text('Bạn chắc chắn muốn gửi yêu cầu SOS!'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Bạn chắc chắn muốn gửi yêu cầu SOS!'),
+                        SizedBox(height: 10),
+                        Text('Vị trí của bạn:'),
+                        Text(_diaChiHienTai ?? 'Chưa xác định được địa chỉ'),
+                      ],
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
@@ -374,18 +387,23 @@ class _HomeState extends State<Home> {
                       TextButton(
                         onPressed: () async {
                           Navigator.of(context).pop();
-                          await FirebaseFirestore.instance.collection('tblYeuCau').add({
+                            Map<String, dynamic> requestData = {
                             'sTieuDe': "Khẩn cấp",
                             'sMoTa': "Yêu cầu cứu trợ khẩn cấp. Chú ý.",
-                            'sViTri': _diaChiHienTai,
+                            'sViTri': _diaChiHienTai ?? 'Chưa xác định được địa chỉ',
                             'userId': userData?['phone'] ?? 'Trống',
                             'userName': userData?['name'] ?? 'Người dùng',
-                            'latitude': _toaDoHienTai?.latitude,
-                            'longitude': _toaDoHienTai?.longitude,
                             'tNgayGui': Timestamp.now(),
                             'sTrangThai': 'chờ duyệt',
                             'sMucDo': 'Khẩn cấp',
-                          });
+                          };
+                          if (_toaDoHienTai != null) {
+                            requestData['sToaDo'] = GeoPoint(
+                              _toaDoHienTai!.latitude,
+                              _toaDoHienTai!.longitude,
+                            );
+                          }
+                          await FirebaseFirestore.instance.collection('tblYeuCau').add(requestData);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Gửi tín hiệu SOS thành công!')),
                           );
@@ -396,22 +414,14 @@ class _HomeState extends State<Home> {
                   );
                 },
               );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Không thể lấy vị trí hiện tại')),
-              );
             }
           } catch (e) {
             // Đóng dialog đang tải
             Navigator.of(context).pop();
-            
             // Hiển thị thông báo lỗi
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Gửi SOS lỗi: $e')),
             );
-          } finally {
-            // Đóng hộp thoại đang tải
-            Navigator.of(context).pop();
           }
         },
         label: Text('SOS'),

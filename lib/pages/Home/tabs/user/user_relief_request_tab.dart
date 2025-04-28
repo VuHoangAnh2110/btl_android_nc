@@ -476,7 +476,7 @@ class _UserReliefRequestTabState extends State<UserReliefRequestTab> {
 
                                 // Thêm tọa độ vị trí nếu có
                                 if (_currentPosition != null) {
-                                  requestData['geoPoint'] = GeoPoint(
+                                  requestData['sToaDo'] = GeoPoint(
                                     _currentPosition!.latitude,
                                     _currentPosition!.longitude,
                                   );
@@ -625,7 +625,7 @@ class _UserReliefRequestTabState extends State<UserReliefRequestTab> {
                           // Hiển thị ảnh nếu có
                           if (request.containsKey('sHinhAnh') && request['sHinhAnh'] != null)
                             Container(
-                              height: 180,
+                              height: 160,
                               width: double.infinity,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.only(

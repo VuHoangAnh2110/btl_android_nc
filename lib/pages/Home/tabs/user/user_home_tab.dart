@@ -1,3 +1,4 @@
+import 'package:btl_android_nc/pages/chi_tiet_yeu_cau_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../widgets/common/feature_card.dart';
@@ -5,6 +6,7 @@ import '../../../../utils/date_formatter.dart';
 import '../../../../services/news_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../pages/news_detail_screen.dart';
+import '../../../../pages/chi_tiet_yeu_cau_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/intl.dart';
 
@@ -249,6 +251,7 @@ class UserHomeTab extends StatelessWidget {
       stream: db
           .collection('tblYeuCau')
           .where('sTrangThai', isEqualTo: 'chấp nhận')
+          .where('sMucDo', isEqualTo: 'Thường')          
           .orderBy('tNgayGui', descending: true)
           .limit(5)
           .snapshots(),
@@ -258,7 +261,47 @@ class UserHomeTab extends StatelessWidget {
         }
 
         if (snapshot.hasError) {
-          return Text('Lỗi: ${snapshot.error}');
+          // Ghi log lỗi để theo dõi, không hiển thị chi tiết cho người dùng
+          debugPrint('Lỗi khi tải dữ liệu yêu cầu cứu trợ: ${snapshot.error}');
+          
+          return Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: Colors.orange,
+                    size: 40,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Không thể tải dữ liệu yêu cầu cứu trợ',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      // Thực hiện fresh build context - đây là cách đơn giản
+                      // nhưng trong ứng dụng thực tế, bạn có thể cần cách tốt hơn để refresh stream
+                      (context as Element).markNeedsBuild();
+                    },
+                    icon: Icon(Icons.refresh),
+                    label: Text('Thử lại'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -278,66 +321,140 @@ class UserHomeTab extends StatelessWidget {
           physics: NeverScrollableScrollPhysics(),
           itemCount: snapshot.data!.docs.length,
           itemBuilder: (context, index) {
-            var request =
-                snapshot.data!.docs[index].data() as Map<String, dynamic>;
+            var request = snapshot.data!.docs[index].data() as Map<String, dynamic>;
+            var requestId = snapshot.data!.docs[index].id;
 
             return Card(
               elevation: 2,
-              margin: EdgeInsets.only(bottom: 10),
+              margin: EdgeInsets.only(bottom: 15),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
                 side: BorderSide(
-                  color: Colors.green.withAlpha(52),
+                  color: Colors.green.withAlpha(70),
                   width: 1,
                 ),
               ),
-              child: ListTile(
-                contentPadding: EdgeInsets.all(12),
-                title: Text(
-                  request['sTieuDe'] ?? 'Yêu cầu cứu trợ',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Column(
+              child: InkWell(
+                onTap: () {
+                  // Chuyển đến trang chi tiết yêu cầu
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChiTietYeuCauScreen(
+                        requestId: requestId,
+                        request: request,
+                      ),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: 4),
-                    Text(
-                      request['sMoTa'] ?? 'Không có mô tả',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.location_on, size: 14, color: Colors.grey),
-                        SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            request['sViTri'] ?? 'Không có địa điểm',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                    // Ảnh nếu có
+                    if (request.containsKey('sHinhAnh') && request['sHinhAnh'] != null)
+                      ClipRRect(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          topRight: Radius.circular(12),
+                        ),
+                        child: CachedNetworkImage(
+                          imageUrl: request['sHinhAnh'],
+                          height: 150,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            height: 150,
+                            color: Colors.grey[200],
+                            child: Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            height: 150,
+                            color: Colors.grey[200],
+                            child: Icon(Icons.image_not_supported, size: 50),
                           ),
                         ),
-                      ],
+                      ),
+                    
+                    Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Tiêu đề
+                          Text(
+                            request['sTieuDe'] ?? 'Yêu cầu cứu trợ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          
+                          SizedBox(height: 8),
+                          
+                          // Mô tả cắt ngắn
+                          Text(
+                            request['sMoTa'] ?? 'Không có mô tả',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          
+                          SizedBox(height: 12),
+                          
+                          // Địa điểm
+                          Row(
+                            children: [
+                              Icon(Icons.location_on, size: 16, color: Colors.grey),
+                              SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  request['sViTri'] ?? 'Không có địa điểm',
+                                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                          SizedBox(height: 6),
+                          
+                          // Ngày gửi và ngày duyệt
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              if (request['tNgayGui'] != null)
+                                Text(
+                                  'Ngày gửi: ${DateFormatter.formatDate(request['tNgayGui'])}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              
+                              if (request['tNgayDuyet'] != null)
+                                Text(
+                                  'Ngày duyệt: ${DateFormatter.formatDate(request['tNgayDuyet'])}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.green[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                trailing: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withAlpha(52),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'Đã duyệt',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                isThreeLine: true,
-              ),
+              )
             );
           },
         );
