@@ -34,171 +34,10 @@ class _UserHomeTabState extends State<UserHomeTab> {
   void initState() {
     super.initState();
     _requestLocationPermission();
-    _initWebViewController();
-    _getCurrentLocation();
-  }
-
-  void _initWebViewController() {
-    _webViewController = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      // Những thiết lập cần thiết để tối ưu hiệu suất WebView
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (String url) {
-            // Thực hiện tối ưu sớm ngay khi trang bắt đầu tải
-            _webViewController.runJavaScript('''
-              // Tắt các hiệu ứng đặc biệt và tối ưu hiệu suất
-              document.body.style.overscrollBehavior = "none";
-              document.documentElement.style.touchAction = "manipulation";
-            ''');
-          },
-          onPageFinished: (String url) {
-            // Tối ưu hóa các thiết lập của trang web sau khi tải xong
-            _webViewController.runJavaScript('''
-              // Tối ưu hiệu suất JavaScript và DOM
-              if (typeof requestAnimationFrame === 'function') {
-                const optimizeScroll = () => {
-                  // Tối ưu hiệu suất cuộn
-                  document.body.style.willChange = 'transform';
-                  
-                  // Tối ưu hoạt động của bản đồ
-                  if (typeof map !== 'undefined') {
-                    map.dragRotate.disable();
-                    map.touchZoomRotate.disableRotation();
-                    map.dragPan.enable({
-                      linearity: 0.3,
-                      easing: t => t,
-                      maxSpeed: 1400,
-                      deceleration: 0.9
-                    });
-                  }
-                };
-                requestAnimationFrame(optimizeScroll);
-              }
-              
-              // Sử dụng passive event listeners
-              if (typeof window.addEventListener === 'function') {
-                window.addEventListener('touchstart', function(){}, {passive: true});
-                window.addEventListener('touchmove', function(){}, {passive: true});
-              }
-              
-              // Tự động theo dõi vị trí người dùng nếu có thể
-              if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(
-                  function(position) {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    
-                    if (typeof updateUserLocation === 'function') {
-                      updateUserLocation(lng, lat);
-                    }
-                  },
-                  function(error) {
-                    console.error('Geolocation error:', error);
-                  },
-                  { 
-                    enableHighAccuracy: false, // Giảm xuống để tiết kiệm pin
-                    maximumAge: 30000, // Tăng lên để giảm số lần cập nhật
-                    timeout: 10000 // Thêm timeout để tránh treo
-                  }
-                );
-              }
-              
-              // Map click event
-              if (typeof map !== 'undefined') {
-                map.on('click', function(e) {
-                  FlutterApp.postMessage('map_click:' + e.lngLat.lng + ',' + e.lngLat.lat);
-                });
-              }
-            ''');
-            
-            setState(() {
-              _isMapReady = true;
-            });
-            
-            _injectUserLocationToMap();
-          },
-          onWebResourceError: (WebResourceError error) {
-            print("WebView error: ${error.description}");
-          },
-        ),
-      )
-      // Thiết lập tối ưu hiệu suất khi tải trang
-      ..loadFlutterAsset('assets/map/index.html');
   }
 
   Future<void> _requestLocationPermission() async {
     await Permission.location.request();
-  }
-
-  Future<void> _getCurrentLocation() async {
-    try {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          print('Location permissions are denied');
-          return;
-        }
-      }
-      
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high
-      );
-      
-      setState(() {
-        _currentPosition = position;
-      });
-      
-      if (_isMapReady && _currentPosition != null) {
-        _injectUserLocationToMap();
-      }
-    } catch (e) {
-      print("Error getting location: $e");
-    }
-  }
-
-  void _injectUserLocationToMap() {
-    if (_currentPosition == null) return;
-    
-    _webViewController.runJavaScript('''
-      // Sử dụng Promise để tối ưu hóa xử lý bất đồng bộ
-      new Promise((resolve) => {
-        window.userCoords = [${_currentPosition!.longitude}, ${_currentPosition!.latitude}];
-        
-        if (typeof map !== 'undefined') {
-          // Kiểm tra trước khi thao tác với marker để tránh lỗi
-          if (window.userMarker) {
-            window.userMarker.remove();
-          }
-          
-          // Tạo marker mới
-          window.userMarker = new goongjs.Marker({
-            color: '#2196F3',
-            // Tối ưu hiệu suất marker
-            draggable: false
-          })
-          .setLngLat(window.userCoords)
-          .addTo(map);
-          
-          // Tối ưu hiệu suất chuyển động map
-          map.flyTo({
-            center: window.userCoords,
-            zoom: 15,
-            essential: true,
-            speed: 2.0, // Tăng tốc độ chuyển động
-            curve: 1,   // Đường cong tuyến tính hơn
-            easing: function(t) { return t; } // Easing function tuyến tính
-          });
-          
-          resolve(true);
-        } else {
-          console.error("Map chưa được khởi tạo");
-          resolve(false);
-        }
-      }).catch(e => console.error('Error updating user location:', e));
-    ''');
   }
 
   @override
@@ -242,16 +81,6 @@ class _UserHomeTabState extends State<UserHomeTab> {
               ],
             ),
           ),
-
-          SizedBox(height: 30),
-
-          Text(
-            'Bản đồ vùng thiên tai',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 15),
-          _buildMapSection(),
-
           SizedBox(height: 30),
 
           Text(
@@ -269,79 +98,8 @@ class _UserHomeTabState extends State<UserHomeTab> {
           ),
           SizedBox(height: 15),
           _buildRecentReliefsSection(),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildMapSection() {
-    return Container(
-      height: 400,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          // Phần 1: Sử dụng RepaintBoundary để tối ưu việc vẽ lại
-          RepaintBoundary(
-            child: WebViewWidget(
-              controller: _webViewController,
-              // Tắt các hiệu ứng chồng lấp không cần thiết
-              layoutDirection: ui.TextDirection.ltr,
-            ),
-          ),
-          
-          // Hiển thị loading indicator khi map đang tải
-          if (!_isMapReady)
-            Container(
-              color: Colors.white,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Đang tải bản đồ...'),
-                  ],
-                ),
-              ),
-            ),
-            
-          // Thay đổi vị trí và style của thông tin bổ sung để không can thiệp vuốt
-          Positioned(
-            left: 10,
-            top: 10,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8), // Làm mờ nền để không quá nổi bật
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Text(
-                'Vị trí hiện tại',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-          ),
+          SizedBox(height: 30),
         ],
       ),
     );
