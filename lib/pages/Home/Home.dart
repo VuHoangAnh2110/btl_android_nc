@@ -6,7 +6,8 @@ import 'tabs/admin/admin_relief_requests_tab.dart';
 import 'tabs/user/user_home_tab.dart';
 import 'tabs/user/user_relief_request_tab.dart';
 import 'tabs/user/user_settings_tab.dart';
-
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 // Cấu trúc dữ liệu 
 // users: Thông tin người dùng (name, phone, password, isAdmin, isLoggedIn)
@@ -33,6 +34,9 @@ class _HomeState extends State<Home> {
   bool isActuallyAdmin = false; // Biến mới để theo dõi quyền admin thực tế
 
   final FirebaseFirestore db = FirebaseFirestore.instance;
+  // Biến để lưu vị trí đã chọn
+  Position? _toaDoHienTai;
+  String? _diaChiHienTai;
 
   @override
   void initState() { //Widget khởi tạo lần đầu tiên 
@@ -106,6 +110,117 @@ class _HomeState extends State<Home> {
     }
   }
 
+  // Hàm kiểm tra quyền truy cập vị trí
+  Future<bool> _handleLocationPermission() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Hiển thị thông báo yêu cầu bật dịch vụ định vị
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Định vị bị tắt'),
+            content: Text('Vui lòng bật dịch vụ định vị để gửi SOS'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Hủy'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await Geolocator.openLocationSettings();
+                },
+                child: Text('Mở cài đặt'),
+              ),
+            ],
+          );
+        },
+      );
+      return false;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Quyền truy cập vị trí bị từ chối')),
+        );
+        return false;
+      }
+    }
+    
+    if (permission == LocationPermission.deniedForever) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Quyền truy cập vị trí bị từ chối vĩnh viễn'),
+          action: SnackBarAction(
+            label: 'Cài đặt',
+            onPressed: () {
+              Geolocator.openAppSettings();
+            },
+          ),
+        ),
+      );
+      return false;
+    }
+    
+    return true;
+  }
+
+  // Hàm lấy vị trí hiện tại
+  Future<void> _getCurrentLocation() async {
+    final hasPermission = await _handleLocationPermission();
+    if (!hasPermission) {
+      return;
+    }
+
+    try {
+      final Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      
+      setState(() {
+        _toaDoHienTai = position;
+      });
+  
+      _getAddressFromLatLng();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi lấy vị trí: $e')),
+      );
+    }
+  }
+
+  // Hàm chuyển đổi tọa độ thành địa chỉ
+  Future<void> _getAddressFromLatLng() async {
+    try {
+      if (_toaDoHienTai == null) return;
+      
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        _toaDoHienTai!.latitude,
+        _toaDoHienTai!.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        setState(() {
+          _diaChiHienTai = 
+            '${place.street}, ${place.subAdministrativeArea}, ${place.administrativeArea}';
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi lấy địa chỉ: $e')),
+      );
+    }
+  }
+
+  // Giao diện 
   @override
   Widget build(BuildContext context) {
     // Sử dụng isActuallyAdmin thay vì widget.isAdmin nếu widget.isAdmin là false hoặc chưa có cột thông tin đó 
@@ -167,18 +282,13 @@ class _HomeState extends State<Home> {
         children: showAdminInterface 
             ? [
                 // Các tab cho admin
-                // buildAdminUsersManagementTab(),
-                // buildAdminNotificationsTab(),
-                // buildAdminReliefRequestsTab(),
+                UserHomeTab(userData: userData, isLoggedIn: isLoggedIn),
                 AdminUsersTab(userData: userData, isLoggedIn: isLoggedIn),
                 AdminNotificationsTab(userData: userData, isLoggedIn: isLoggedIn),
                 AdminReliefRequestsTab(userData: userData, isLoggedIn: isLoggedIn),
               ]
             : [
                 // Các tab cho người dùng thường
-                // buildUserHomeTab(),
-                // buildUserReliefRequestTab(),
-                // buildUserSettingsTab(),
                 UserHomeTab(userData: userData, isLoggedIn: isLoggedIn),
                 UserReliefRequestTab(userData: userData, isLoggedIn: isLoggedIn),
                 UserSettingsTab(
@@ -189,9 +299,13 @@ class _HomeState extends State<Home> {
       ),
       
       // Bottom navigation với các mục khác nhau cho admin và người dùng thường
-      bottomNavigationBar: BottomNavigationBar( // THanh điều hướng dưới cùng 
+      bottomNavigationBar: BottomNavigationBar( // Thanh điều hướng dưới cùng 
         items: showAdminInterface
             ? [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home),
+                  label: 'Trang chủ',
+                ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.people),
                   label: 'Quản lý người dùng',
@@ -230,24 +344,75 @@ class _HomeState extends State<Home> {
       
       // SOS button cho cả admin và người dùng thường
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
+        onPressed: () async{
+          // Hiển thị đang tải
           showDialog(
             context: context,
+            barrierDismissible: false,
             builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text('SOS'),
-                content: Text('Bạn đã gửi yêu cầu cứu trợ khẩn cấp!'),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Text('OK'),
-                  ),
-                ],
+              return Center(
+                child: CircularProgressIndicator(),
               );
             },
           );
+
+          try{
+            await _getCurrentLocation();
+            if (_toaDoHienTai != null && _diaChiHienTai != null) {
+              Navigator.of(context).pop();
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('Gửi SOS'),
+                    content: Text('Bạn chắc chắn muốn gửi yêu cầu SOS!'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text('Hủy'),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          await FirebaseFirestore.instance.collection('tblYeuCau').add({
+                            'sTieuDe': "Khẩn cấp",
+                            'sMoTa': "Yêu cầu cứu trợ khẩn cấp. Chú ý.",
+                            'sViTri': _diaChiHienTai,
+                            'userId': userData?['phone'] ?? 'Trống',
+                            'userName': userData?['name'] ?? 'Người dùng',
+                            'latitude': _toaDoHienTai?.latitude,
+                            'longitude': _toaDoHienTai?.longitude,
+                            'tNgayGui': Timestamp.now(),
+                            'sTrangThai': 'chờ duyệt',
+                            'sMucDo': 'Khẩn cấp',
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Gửi tín hiệu SOS thành công!')),
+                          );
+                        },
+                        child: Text('Gửi SOS'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Không thể lấy vị trí hiện tại')),
+              );
+            }
+          } catch (e) {
+            // Đóng dialog đang tải
+            Navigator.of(context).pop();
+            
+            // Hiển thị thông báo lỗi
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Gửi SOS lỗi: $e')),
+            );
+          } finally {
+            // Đóng hộp thoại đang tải
+            Navigator.of(context).pop();
+          }
         },
         label: Text('SOS'),
         icon: Icon(Icons.warning, color: Colors.white),

@@ -217,7 +217,7 @@ class _UserReliefRequestTabState extends State<UserReliefRequestTab> {
         Placemark place = placemarks[0];
         setState(() {
           _currentAddress = 
-            '${place.street}, ${place.subLocality}, '
+            '${place.street}, '
             '${place.subAdministrativeArea}, ${place.administrativeArea}';
           _locationController.text = _currentAddress!;
           _isLoading = false;
