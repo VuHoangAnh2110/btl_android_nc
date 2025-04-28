@@ -405,7 +405,7 @@ class UserHomeTab extends StatelessWidget {
                             ),
                           ),
                           
-                          SizedBox(height: 12),
+                          SizedBox(height: 10),
                           
                           // Địa điểm
                           Row(
@@ -433,7 +433,7 @@ class UserHomeTab extends StatelessWidget {
                                 Text(
                                   'Ngày gửi: ${DateFormatter.formatDate(request['tNgayGui'])}',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 13,
                                     color: Colors.grey[600],
                                   ),
                                 ),
@@ -442,7 +442,7 @@ class UserHomeTab extends StatelessWidget {
                                 Text(
                                   'Ngày duyệt: ${DateFormatter.formatDate(request['tNgayDuyet'])}',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 13,
                                     color: Colors.green[600],
                                     fontWeight: FontWeight.w500,
                                   ),

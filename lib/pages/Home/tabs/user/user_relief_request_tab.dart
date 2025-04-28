@@ -9,6 +9,8 @@ import 'package:geocoding/geocoding.dart';
 import 'dart:io';
 import 'package:dio/dio.dart';
 
+import '../../../chi_tiet_yeu_cau_screen.dart';
+
 class UserReliefRequestTab extends StatefulWidget {
   final Map<String, dynamic>? userData;
   final bool isLoggedIn;
@@ -492,8 +494,7 @@ class _UserReliefRequestTabState extends State<UserReliefRequestTab> {
 
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(
-                                        'Yêu cầu cứu trợ đã được gửi thành công'),
+                                    content: Text('Yêu cầu cứu trợ đã được gửi thành công'),
                                     backgroundColor: Colors.green,
                                   ),
                                 );
@@ -609,142 +610,237 @@ class _UserReliefRequestTabState extends State<UserReliefRequestTab> {
                     var requestId = snapshot.data!.docs[index].id;
                     String status = request['sTrangThai'] ?? 'chờ duyệt';
 
-                    return Card(
-                      elevation: 2,
-                      margin: EdgeInsets.only(bottom: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: BorderSide(
-                          color: _getStatusColor(status),
-                          width: 1,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Hiển thị ảnh nếu có
-                          if (request.containsKey('sHinhAnh') && request['sHinhAnh'] != null)
-                            Container(
-                              height: 160,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  topRight: Radius.circular(10),
-                                ),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(9),
-                                  topRight: Radius.circular(9),
-                                ),
-                                child: Image.network(
-                                  request['sHinhAnh'],
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Center(
-                                    child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
-                                  ),
-                                  loadingBuilder: (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return Center(
-                                      child: CircularProgressIndicator(
-                                        value: loadingProgress.expectedTotalBytes != null
-                                            ? loadingProgress.cumulativeBytesLoaded / 
-                                              loadingProgress.expectedTotalBytes!
-                                            : null,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
+                    return InkWell(
+                      onTap: () {
+                        // Chuyển đến trang chi tiết yêu cầu khi nhấn vào
+                        Navigator.push(context,
+                          MaterialPageRoute(
+                            builder: (context) => ChiTietYeuCauScreen(
+                              requestId: requestId,
+                              request: request,
                             ),
-                          Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        request['sTieuDe'] ?? 'Yêu cầu cứu trợ',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Card(
+                        elevation: 2,
+                        margin: EdgeInsets.only(bottom: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(
+                            color: _getStatusColor(status),
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Hiển thị ảnh
+                            if (request.containsKey('sHinhAnh') && request['sHinhAnh'] != null)
+                              Container(
+                                height: 120,
+                                width: double.infinity,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(9),
+                                    topRight: Radius.circular(9),
+                                  ),
+                                  child: Image.network(
+                                    request['sHinhAnh'],
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Center(
+                                      child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                                    ),
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Center(
+                                        child: CircularProgressIndicator(
+                                          value: loadingProgress.expectedTotalBytes != null
+                                              ? loadingProgress.cumulativeBytesLoaded / 
+                                                loadingProgress.expectedTotalBytes!
+                                              : null,
                                         ),
-                                      ),
-                                    ),
-                                    StatusBadge(status: status),
-                                  ],
+                                      );
+                                    },
+                                  ),
                                 ),
-                                SizedBox(height: 10),
-                                Text(request['sMoTa'] ?? 'Không có mô tả'),
-                                SizedBox(height: 10),
-                                Row(
-                                  children: [
-                                    Icon(Icons.location_on,
-                                        size: 16, color: Colors.grey),
-                                    SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        request['sViTri'] ?? 'Không có địa điểm',
-                                        style: TextStyle(
-                                            fontSize: 14, color: Colors.grey),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 5),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      'Ngày tạo: ${DateFormatter.formatDate(request['tNgayGui'])}',
-                                      style: TextStyle(
-                                          fontSize: 12, color: Colors.grey),
-                                    ),
-                                  ],
-                                ),
-                                if (status == 'chờ duyệt')
+                              ),
+                            Padding(
+                              padding: EdgeInsets.all(12), 
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [// Header với tiêu đề và trạng thái, mức độ
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
-                                      TextButton(
-                                        onPressed: () async {
-                                          try {
-                                            await db
-                                                .collection('tblYeuCau')
-                                                .doc(requestId)
-                                                .delete();
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content:
-                                                    Text('Đã xóa yêu cầu cứu trợ'),
-                                                backgroundColor: Colors.red,
-                                              ),
-                                            );
-                                          } catch (e) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: Text('Lỗi: $e'),
-                                                backgroundColor: Colors.red,
-                                              ),
-                                            );
-                                          }
-                                        },
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: Colors.red,
+                                      Expanded(
+                                        child: Text(
+                                          request['sTieuDe'] ?? 'Yêu cầu cứu trợ',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        child: Text('Hủy yêu cầu'),
+                                      ),
+                                      Row(
+                                        children: [
+                                          StatusBadge(status: status),
+                                          SizedBox(width: 6),
+                                          // Hiển thị mức độ
+                                          Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: _getMucDoColor(request['sMucDo'] ?? 'Thường').withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.warning_amber_rounded, 
+                                                  size: 14, 
+                                                  color: _getMucDoColor(request['sMucDo'] ?? 'Thường')
+                                                ),
+                                                SizedBox(width: 4),
+                                                Text(
+                                                  request['sMucDo'] ?? 'Thường',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.black, // _getMucDoColor(request['sMucDo'] ?? 'Thường'),
+                                                    fontWeight: request['sMucDo'] == 'Khẩn cấp' ? FontWeight.bold : FontWeight.normal,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                              ],
+                                  SizedBox(height: 8),
+                                  
+                                  // Mô tả rút gọn
+                                  Text(
+                                    request['sMoTa'] ?? 'Không có mô tả',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(fontSize: 14),
+                                  ),
+                                  
+                                  SizedBox(height: 8),
+                                  
+                                  // Địa điểm
+                                  Row(
+                                    children: [
+                                      Icon(Icons.location_on, size: 16, color: Colors.grey),
+                                      SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          request['sViTri'] ?? 'Không có địa điểm',
+                                          style: TextStyle(
+                                            fontSize: 14, 
+                                            color: Colors.grey
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  
+                                  SizedBox(height: 5),
+                                  
+                                  // Footer với ngày tạo và ngày duyệt
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      if (request['tNgayGui'] != null)
+                                        Text(
+                                          'Ngày gửi: ${DateFormatter.formatDate(request['tNgayGui'])}',
+                                          style: TextStyle(
+                                            fontSize: 13, 
+                                            color: Colors.grey[600]
+                                          ),
+                                        ),
+                                      
+                                      if (status != 'chờ duyệt' && request['tNgayDuyet'] != null)
+                                        Text(
+                                          'Ngày duyệt: ${DateFormatter.formatDate(request['tNgayDuyet'])}',
+                                          style: TextStyle(
+                                            fontSize: 13, 
+                                            color: _getStatusColor(status),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  
+                                  // Nút hủy yêu cầu (nếu đang chờ duyệt)
+                                  if (status == 'chờ duyệt')
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton.icon(
+                                        onPressed: () async {
+                                          // Xác nhận trước khi xóa
+                                          bool confirm = await showDialog(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              title: Text('Xác nhận'),
+                                              content: Text('Bạn có chắc chắn muốn hủy yêu cầu này?'),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(context).pop(false),
+                                                  child: Text('Không'),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(context).pop(true),
+                                                  child: Text('Có'),
+                                                  style: TextButton.styleFrom(
+                                                    foregroundColor: Colors.red,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ) ?? false;
+                                          
+                                          if (confirm) {
+                                            try {
+                                              await db
+                                                  .collection('tblYeuCau')
+                                                  .doc(requestId)
+                                                  .delete();
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text('Đã xóa yêu cầu cứu trợ'),
+                                                  backgroundColor: Colors.green,
+                                                ),
+                                              );
+                                            } catch (e) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text('Lỗi: $e'),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          }
+                                        },
+                                        icon: Icon(Icons.delete_outline, size: 16),
+                                        label: Text('Hủy yêu cầu'),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -767,4 +863,17 @@ class _UserReliefRequestTabState extends State<UserReliefRequestTab> {
     }
   }
   
+  // Hàm lấy màu dựa vào mức độ
+  Color _getMucDoColor(String MucDo) {
+    switch (MucDo) {
+      case 'Khẩn cấp':
+        return Colors.red;
+      case 'Thường':
+        return Colors.orange; 
+      default:
+        return Colors.blue;
+    }
+  }
+
+
 }

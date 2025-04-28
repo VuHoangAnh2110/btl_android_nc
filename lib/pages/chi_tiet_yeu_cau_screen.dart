@@ -1,3 +1,4 @@
+import 'package:btl_android_nc/widgets/common/status_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -92,30 +93,40 @@ class _ChiTietYeuCauScreenState extends State<ChiTietYeuCauScreen> {
 
                               SizedBox(height: 8),
 
-                              // Trạng thái
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  'Đã chấp nhận',
-                                  style: TextStyle(
-                                    color: Colors.green[700],
-                                    fontWeight: FontWeight.bold,
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // Trạng thái (bên trái)
+                                  StatusBadge(status: request['sTrangThai'] ?? 'chờ duyệt'),
+                                  
+                                  // Mức độ (bên phải)
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: _getMucDoColor(request['sMucDo'] ?? 'Thường').withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.warning_amber_rounded,
+                                          color: _getMucDoColor(request['sMucDo'] ?? 'Thường'),
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 6),
+                                        Text(
+                                          request['sMucDo'] ?? 'Chưa xác định',
+                                          style: TextStyle(
+                                            color:  Colors.black,// _getMucDoColor(request['sMucDo'] ?? 'Thường'),
+                                            fontWeight: request['sMucDo'] == 'Khẩn cấp' ? FontWeight.bold : FontWeight.normal,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ),
-
-                              SizedBox(height: 16),
-
-                              // Mức độ
-                              _buildInfoRow(
-                                Icons.warning_amber_rounded,
-                                'Mức độ:',
-                                request['sMucDo'] ?? 'Chưa xác định',
-                                Colors.orange,
+                                ],
                               ),
 
                               SizedBox(height: 8),
@@ -140,7 +151,7 @@ class _ChiTietYeuCauScreenState extends State<ChiTietYeuCauScreen> {
                                   children: [
                                     _buildInfoRow(
                                       Icons.location_on,
-                                      'Địa chỉ:',
+                                      '',
                                       request['sViTri'] ?? 'Không có địa chỉ',
                                       Colors.red,
                                     ),
@@ -162,7 +173,7 @@ class _ChiTietYeuCauScreenState extends State<ChiTietYeuCauScreen> {
                                   children: [
                                     _buildInfoRow(
                                       Icons.person,
-                                      'Người gửi:',
+                                      'Tên:',
                                       request['userName'] ?? 'Không có thông tin',
                                       Colors.blue,
                                     ),
@@ -319,4 +330,17 @@ class _ChiTietYeuCauScreenState extends State<ChiTietYeuCauScreen> {
       );
     }
   }
+
+  // Hàm lấy màu dựa vào mức độ
+  Color _getMucDoColor(String MucDo) {
+    switch (MucDo) {
+      case 'Khẩn cấp':
+        return Colors.red;
+      case 'Thường':
+        return Colors.orange; 
+      default:
+        return Colors.blue;
+    }
+  }
+
 }
