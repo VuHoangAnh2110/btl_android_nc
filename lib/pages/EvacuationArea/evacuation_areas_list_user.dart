@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import '../../models/evacuation_area.dart';
 import '../../services/evacuation_service.dart';
 import 'evacuation_area_map_view.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class EvacuationAreasListUser extends StatefulWidget {
   @override
@@ -371,34 +373,25 @@ class _EvacuationAreasListUserState extends State<EvacuationAreasListUser> {
                       child: Container(
                         height: 180,
                         width: double.infinity,
-                        color: Colors.grey[300],
-                        child: Stack(
+                        child: FlutterMap(
+                          options: MapOptions(
+                            initialCenter: LatLng(area.latitude, area.longitude),
+                            initialZoom: 14,
+                          ),
                           children: [
-                            Image.network(
-                              'https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${area.longitude},${area.latitude})/${area.longitude},${area.latitude},14,0/400x180?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA',
-                              width: double.infinity,
-                              height: 180,
-                              fit: BoxFit.cover,
+                            TileLayer(
+                              urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                              subdomains: ['a', 'b', 'c'],
                             ),
-                            Positioned(
-                              right: 8,
-                              bottom: 8,
-                              child: ElevatedButton.icon(
-                                icon: Icon(Icons.map, color: Colors.white, size: 16),
-                                label: Text('Xem đầy đủ', style: TextStyle(color: Colors.white)),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context).primaryColor,
-                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            MarkerLayer(
+                              markers: [
+                                Marker(
+                                  point: LatLng(area.latitude, area.longitude),
+                                  width: 40,
+                                  height: 40,
+                                  child: Icon(Icons.location_on, color: Colors.red, size: 40),
                                 ),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => EvacuationAreaMapView(area: area),
-                                    ),
-                                  );
-                                },
-                              ),
+                              ],
                             ),
                           ],
                         ),
