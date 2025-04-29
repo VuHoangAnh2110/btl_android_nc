@@ -1,4 +1,5 @@
 import 'package:btl_android_nc/pages/chi_tiet_yeu_cau_screen.dart';
+import 'package:btl_android_nc/pages/xem_tat_ca_yeu_cau.dart'; // Thêm import mới
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -94,10 +95,40 @@ class _UserHomeTabState extends State<UserHomeTab> {
 
           SizedBox(height: 30),
 
-          Text(
-            'Yêu cầu cứu trợ gần đây',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Yêu cầu cứu trợ gần đây',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => XemTatCaYeuCau(),
+                    ),
+                  );
+                },
+                child: Row(
+                  children: [
+                    Text(
+                      'Xem tất cả',
+                      style: TextStyle(color: Theme.of(context).primaryColor),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_forward,
+                      size: 16,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
+          
           SizedBox(height: 15),
           _buildRecentReliefsSection(),
 
