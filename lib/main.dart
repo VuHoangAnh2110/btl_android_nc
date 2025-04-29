@@ -8,6 +8,7 @@ import 'pages/DangKy/DangKy.dart';
 import 'services/firebase_messaging_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
+import '../../../../pages/EvacuationArea/evacuation_areas_list_user.dart';
 
 // Khai báo biến FirebaseFirestore toàn cục nếu bạn muốn sử dụng ở nhiều nơi
 final FirebaseFirestore db = FirebaseFirestore.instance;
@@ -99,6 +100,7 @@ class MyApp extends StatelessWidget {
                 '/dangnhap': (context) => Dangnhap(),
                 '/dangky': (context) => Dangky(),
                 '/home': (context) => Home(),
+                '/evacuation-areas-user': (context) => EvacuationAreasListUser(),
             },
             debugShowCheckedModeBanner: false,
         );

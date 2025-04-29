@@ -4,11 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart'; // Thêm import
 import 'tabs/admin/admin_users_tab.dart';
 import 'tabs/admin/admin_notifications_tab.dart';
 import 'tabs/admin/admin_relief_requests_tab.dart';
+import 'tabs/admin/admin_evacuation_areas_tab.dart'; // Thêm dòng này
 import 'tabs/user/user_home_tab.dart';
 import 'tabs/user/user_relief_request_tab.dart';
 import 'tabs/user/user_settings_tab.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
+import '../EvacuationArea/evacuation_areas_list_user.dart';
 
 // Cấu trúc dữ liệu 
 // users: Thông tin người dùng (name, phone, password, isAdmin, isLoggedIn)
@@ -282,11 +282,13 @@ class _HomeState extends State<Home> {
                 AdminUsersTab(userData: userData, isLoggedIn: isLoggedIn),
                 AdminNotificationsTab(userData: userData, isLoggedIn: isLoggedIn),
                 AdminReliefRequestsTab(userData: userData, isLoggedIn: isLoggedIn),
+                AdminEvacuationAreasTab(userData: userData, isLoggedIn: isLoggedIn), // Thêm tab mới
               ]
             : [
                 // Các tab cho người dùng thường
                 UserHomeTab(userData: userData, isLoggedIn: isLoggedIn),
                 UserReliefRequestTab(userData: userData, isLoggedIn: isLoggedIn),
+                EvacuationAreasListUser(),
                 UserSettingsTab(
                     userData: userData,
                     isLoggedIn: isLoggedIn,
@@ -312,7 +314,15 @@ class _HomeState extends State<Home> {
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.volunteer_activism),
-                  label: 'Cứu trợ',
+                  label: 'Yêu Cầu Cứu trợ',
+                ),
+                BottomNavigationBarItem( // Thêm item mới
+                  icon: Icon(Icons.location_on),
+                  label: 'Khu vực di tản',
+                ),
+                BottomNavigationBarItem( // Thêm item mới
+                  icon: Icon(Icons.location_on),
+                  label: 'Khu vực di tản',
                 ),
               ]
             : [
@@ -323,6 +333,10 @@ class _HomeState extends State<Home> {
                 BottomNavigationBarItem(
                   icon: Icon(Icons.volunteer_activism),
                   label: 'Yêu cầu cứu trợ',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.location_on),
+                  label: 'Khu vực di tản',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.settings),
@@ -336,6 +350,7 @@ class _HomeState extends State<Home> {
             _selectedIndex = index;
           });
         },
+        type: BottomNavigationBarType.fixed, // Thêm dòng này để hiển thị tất cả các tab
       ),
       
       // SOS button cho cả admin và người dùng thường

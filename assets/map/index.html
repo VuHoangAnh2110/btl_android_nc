@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bản đồ chỉ đường</title>
+    <script src='https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.js'></script>
+    <link href='https://cdn.jsdelivr.net/npm/@goongmaps/goong-js@1.0.9/dist/goong-js.css' rel='stylesheet' />
+    <style>
+        #map {
+            width: 100%;
+            height: 100%;
+            touch-action: pan-x pan-y; /* Cho phép chỉ cuộn dọc và ngang */
+        }
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overscroll-behavior: none; /* Ngăn chặn overscroll */
+            touch-action: manipulation; /* Tối ưu hóa cử chỉ cảm ứng */
+            -webkit-overflow-scrolling: touch; /* Cải thiện cuộn trên iOS */
+        }
+        
+        /* Thêm style cho marker và popup */
+        .mapboxgl-popup {
+            max-width: 200px;
+        }
+        
+        .mapboxgl-popup-content {
+            text-align: center;
+            font-family: 'Open Sans', sans-serif;
+            padding: 10px;
+        }
+        
+        /* Làm cho các điều khiển bản đồ lớn hơn để dễ chạm */
+        .mapboxgl-ctrl-group button {
+            width: 36px !important;
+            height: 36px !important;
+        }
+        
+        /* Làm trơn chuyển động của bản đồ */
+        .mapboxgl-canvas {
+            will-change: transform; /* Dùng GPU để tăng tốc hiển thị */
+        }
+    </style>
+    <!-- Thêm bộ xử lý cử chỉ FastClick để giảm độ trễ nhấp -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js"></script>
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <script>
+        // Khởi tạo FastClick để cải thiện thời gian phản hồi khi chạm
+        if ('addEventListener' in document) {
+            document.addEventListener('DOMContentLoaded', function() {
+                FastClick.attach(document.body);
+            }, false);
+        }
+        
+        goongjs.accessToken = 'kmc5e4biI5WVwxOws2Mt6HieJL6FIwK1bb3rxk3G';
+        window.userCoords = null;
+        let userMarker = null;
+
+        // Thiết lập tốc độ chuyển động cho bản đồ
+        const mapOptions = {
+            container: 'map',
+            style: 'https://tiles.goong.io/assets/goong_map_web.json',
+            center: [105.83991, 21.02800],
+            zoom: 9,
+            dragPan: {
+                linearity: 0.3, // Giảm xuống để cuộn mượt hơn (mặc định: 0.45)
+                easing: t => t, // easing tuyến tính
+                inertia: 0.8, // Tăng để có hiệu ứng quán tính tốt hơn (mặc định: 0.3)
+                maxSpeed: 1400 // Tăng tốc độ tối đa (mặc định: 1400)
+            },
+            touchZoomRotate: {
+                inertia: 0.8 // Tăng để zoom mượt hơn (mặc định: 0.3)
+            },
+            trackResize: true,
+            attributionControl: false // Bỏ control attribution để tiết kiệm không gian
+        };
+        
+        const map = new goongjs.Map(mapOptions);
+
+        map.on('load', function () {
+            // Tối ưu hiệu suất bằng cách giảm số lượng tile tải
+            map.getCanvas().style.imageRendering = 'high-quality';
+            
+            window.updateUserLocation = function (lng, lat) {
+                window.userCoords = [lng, lat];
+
+                if (userMarker) {
+                    userMarker.remove();
+                }
+
+                userMarker = new goongjs.Marker({ color: '#2196F3' })
+                    .setLngLat(window.userCoords)
+                    .addTo(map);
+
+                // Popup sẽ hiển thị khi click vào marker, không tự động hiển thị
+                const popup = new goongjs.Popup({offset: 25})
+                    .setHTML('<h4>Vị trí của bạn</h4>');
+                
+                userMarker.setPopup(popup);
+
+                map.flyTo({
+                    center: window.userCoords,
+                    zoom: 15,
+                    essential: true,
+                    speed: 1.8, // Tăng tốc độ chuyển động (mặc định: 1.2)
+                    curve: 1 // Tăng mức độ cong của đường cong (mặc định: 1.42)
+                });
+
+                return true;
+            };
+
+            // Tối ưu hóa điều khiển bản đồ
+            map.dragRotate.disable(); // Tắt xoay bản đồ
+            map.touchZoomRotate.disableRotation(); // Tắt xoay trên thiết bị cảm ứng
+            map.touchPitch.disable(); // Tắt cử chỉ nghiêng
+            map.scrollZoom.setWheelZoomRate(1/250); // Cải thiện tốc độ zoom khi cuộn (mặc định là 1/450)
+            map.scrollZoom.setZoomRate(1/100); // Tốc độ zoom nhanh hơn
+            
+            // Thêm điều khiển zoom tốt hơn với kích thước lớn hơn
+            map.addControl(new goongjs.NavigationControl({
+                showCompass: false // Chỉ hiển thị nút zoom, không hiển thị la bàn
+            }), 'top-right');
+            
+            // Cho phép bản đồ phản hồi ngay lập tức với tương tác người dùng
+            map.on('mousedown', function() {
+                map.getCanvas().style.cursor = 'grabbing';
+            });
+
+            map.on('mouseup', function() {
+                map.getCanvas().style.cursor = 'grab';
+            });
+            
+            // Thêm luồng giao tiếp với Flutter
+            window.addEventListener('message', function(e) {
+                try {
+                    const message = JSON.parse(e.data);
+                    if (message && message.type === 'updateLocation') {
+                        window.updateUserLocation(message.lng, message.lat);
+                    }
+                } catch (err) {
+                    console.error('Error processing message from Flutter:', err);
+                }
+            });
+            
+            // Báo cho Flutter biết là bản đồ đã sẵn sàng
+            try {
+                window.FlutterApp.postMessage('map_ready');
+            } catch (e) {
+                console.log('FlutterApp interface not available yet');
+            }
+        });
+
+        // Lựa chọn hiển thị khi click vào map đã được tối ưu hóa
+        map.on('click', (e) => {
+            try {
+                const coords = e.lngLat;
+                if (window.FlutterApp) {
+                    window.FlutterApp.postMessage('map_click:' + coords.lng + ',' + coords.lat);
+                }
+            } catch (err) {
+                console.error('Error sending click info to Flutter:', err);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import 'package:btl_android_nc/pages/chi_tiet_yeu_cau_screen.dart';
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../widgets/common/feature_card.dart';
 import '../../../../utils/date_formatter.dart';
@@ -8,9 +9,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../pages/news_detail_screen.dart';
 import '../../../../pages/chi_tiet_yeu_cau_screen.dart';
 import 'package:intl/intl.dart';
-import 'package:intl/intl.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart';
 
-class UserHomeTab extends StatelessWidget {
+class UserHomeTab extends StatefulWidget {
   final Map<String, dynamic>? userData;
   final bool isLoggedIn;
 
@@ -21,13 +24,31 @@ class UserHomeTab extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<UserHomeTab> createState() => _UserHomeTabState();
+}
+
+class _UserHomeTabState extends State<UserHomeTab> {
+  Position? _currentPosition;
+  late WebViewController _webViewController;
+  bool _isMapReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _requestLocationPermission();
+  }
+
+  Future<void> _requestLocationPermission() async {
+    await Permission.location.request();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner chào mừng
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(20),
@@ -39,8 +60,8 @@ class UserHomeTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isLoggedIn
-                      ? 'Chào mừng, ${userData?['name'] ?? 'Người dùng'}!'
+                  widget.isLoggedIn
+                      ? 'Chào mừng, ${widget.userData?['name'] ?? 'Người dùng'}!'
                       : 'Chào mừng đến với ứng dụng Hỗ Trợ Thiên Tai',
                   style: TextStyle(
                     fontSize: 20,
@@ -49,9 +70,9 @@ class UserHomeTab extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 10),
-                if (isLoggedIn)
+                if (widget.isLoggedIn)
                   Text(
-                    'Số điện thoại: ${userData?['phone'] ?? 'Không có'}',
+                    'Số điện thoại: ${widget.userData?['phone'] ?? 'Không có'}',
                     style: TextStyle(fontSize: 16),
                   )
                 else
@@ -62,20 +83,8 @@ class UserHomeTab extends StatelessWidget {
               ],
             ),
           ),
-
           SizedBox(height: 30),
 
-          // Bản đồ
-          Text(
-            'Bản đồ vùng thiên tai',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 15),
-          _buildMapSection(),
-
-          SizedBox(height: 30),
-
-          // Tin tức thời tiết
           Text(
             'Tin tức thời tiết',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -85,38 +94,15 @@ class UserHomeTab extends StatelessWidget {
 
           SizedBox(height: 30),
 
-          // Yêu cầu cứu trợ gần đây
           Text(
             'Yêu cầu cứu trợ gần đây',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 15),
           _buildRecentReliefsSection(),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildMapSection() {
-    return Container(
-      height: 200,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.map, size: 50, color: Colors.grey[600]),
-            SizedBox(height: 10),
-            Text(
-              'Bản đồ đang được cập nhật',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
-        ),
+          SizedBox(height: 30),
+        ],
       ),
     );
   }
@@ -210,15 +196,14 @@ class UserHomeTab extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 4),
-                    if (item['pubDate'] != null)
-                      Text(
-                        'Đăng: ${_formatNewsDate(item['pubDate'])}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.grey,
-                        ),
+                    Text(
+                      'Đăng: ${_formatNewsDate(item['pubDate'])}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey,
                       ),
+                    ),
                   ],
                 ),
                 onTap: () {
@@ -462,7 +447,8 @@ class UserHomeTab extends StatelessWidget {
     );
   }
 
-  String _formatNewsDate(DateTime date) {
+  String _formatNewsDate(DateTime? date) {
+    if (date == null) return 'Không rõ';
     return DateFormat('dd/MM/yyyy HH:mm').format(date);
   }
 }
