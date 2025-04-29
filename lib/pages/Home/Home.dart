@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Thêm import
 import 'tabs/admin/admin_users_tab.dart';
 import 'tabs/admin/admin_notifications_tab.dart';
 import 'tabs/admin/admin_relief_requests_tab.dart';
@@ -42,64 +43,60 @@ class _HomeState extends State<Home> {
 
   Future<void> fetchUserData() async {
     try {
-      final querySnapshot = await db.collection('users').get();
-      // Tìm người dùng đã đăng nhập
-      QueryDocumentSnapshot? loggedInUser;
+      // Lấy thông tin đăng nhập từ SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('userId');
       
-      for (var doc in querySnapshot.docs) {
-        if (doc.data().containsKey('isLoggedIn') && doc['isLoggedIn'] == true) {
-          loggedInUser = doc;
-          break;
-        }
-      }
-
-      // Nếu tìm thấy người dùng đã đăng nhập, cập nhật dữ liệu
-      // và trạng thái đăng nhập
-      setState(() {
-        if (loggedInUser != null) {
-          userData = loggedInUser.data() as Map<String, dynamic>;
-          isLoggedIn = true;
+      if (userId != null) {
+        // Đã có người dùng đăng nhập, lấy thông tin chi tiết từ Firestore
+        final userDoc = await db.collection('users').doc(userId).get();
+        
+        if (userDoc.exists) {
+          Map<String, dynamic> firestoreUserData = userDoc.data() as Map<String, dynamic>;
           
-          // Cập nhật biến isActuallyAdmin dựa trên dữ liệu thực tế
-          isActuallyAdmin = userData!.containsKey('isAdmin') && userData!['isAdmin'] == true;
+          setState(() {
+            userData = firestoreUserData;
+            isLoggedIn = true;
+            isActuallyAdmin = prefs.getBool('isAdmin') ?? false;
+          });
         } else {
+          // Tài khoản không còn tồn tại trong Firestore
+          logout(); // Đăng xuất nếu tài khoản không còn tồn tại
+        }
+      } else {
+        // Không có người dùng đăng nhập
+        setState(() {
           userData = null;
           isLoggedIn = false;
           isActuallyAdmin = false;
-        }
-      });
+        });
+      }
     } catch (e) {
-       debugPrint('Lỗi khi lấy thông tin người dùng: $e');
+      debugPrint('Lỗi khi lấy thông tin người dùng: $e');
     }
   }
 
   Future<void> logout() async {
     try {
-      if (userData != null && userData!.containsKey('phone')) {
-        // Tìm người dùng theo số điện thoại để đăng xuất
-        final querySnapshot = await db
-            .collection('users')
-            .where('phone', isEqualTo: userData!['phone'])
-            .get();
-
-        if (querySnapshot.docs.isNotEmpty) {
-          final userDoc = querySnapshot.docs.first;
-          // Cập nhật trạng thái đăng xuất
-          await db.collection('users').doc(userDoc.id).update({'isLoggedIn': false});
-        }
-      }
-      // reset trạng thái local 
+      // Xóa dữ liệu đăng nhập từ SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('userId');
+      await prefs.remove('isAdmin');
+      await prefs.remove('userName');
+      await prefs.remove('userPhone');
+      
+      // Reset trạng thái local
       setState(() {
         userData = null;
         isLoggedIn = false;
-        isActuallyAdmin = false; // Reset quyền admin khi đăng xuất
+        isActuallyAdmin = false;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Đăng xuất thành công')),
       );
     } catch (e) {
-       debugPrint('Lỗi khi đăng xuất: $e');
+      debugPrint('Lỗi khi đăng xuất: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Đăng xuất không thành công: $e')),
       );

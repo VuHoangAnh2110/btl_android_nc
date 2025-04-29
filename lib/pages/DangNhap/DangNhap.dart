@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Thêm import
 import '../Home/Home.dart'; 
 import '../DangKy/DangKy.dart';
 
@@ -55,12 +56,12 @@ class _DangNhap extends State<Dangnhap> {
       // Kiểm tra quyền admin một cách an toàn
       final bool isAdmin = userData.containsKey('isAdmin') ? userData['isAdmin'] ?? false : false;
       
-      // Đăng nhập thành công, cập nhật trạng thái isLoggedIn
-      await firestore.collection('users').doc(userId).update({
-        'isLoggedIn': true
-      }).catchError((error) {
-        print("Không thể cập nhật trạng thái đăng nhập: $error");
-      });
+      // LƯU THÔNG TIN ĐĂNG NHẬP VÀO SHARED PREFERENCES
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userId', userId);
+      await prefs.setBool('isAdmin', isAdmin);
+      await prefs.setString('userName', userData['name'] ?? '');
+      await prefs.setString('userPhone', userData['phone'] ?? '');
       
       // Hiển thị thông báo thành công với vai trò tương ứng
       ScaffoldMessenger.of(context).showSnackBar(
@@ -69,9 +70,6 @@ class _DangNhap extends State<Dangnhap> {
           backgroundColor: Colors.green,
         )
       );
-      
-      // Lưu thông tin người dùng (có thể sử dụng shared preferences hoặc state provider)
-      // Ví dụ: Sử dụng biến toàn cục hoặc shared preferences
       
       // Chuyển về trang Home với thông tin về vai trò admin
       Navigator.pushReplacement(

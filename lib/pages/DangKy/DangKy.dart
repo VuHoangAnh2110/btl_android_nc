@@ -64,7 +64,6 @@ class _DangKy extends State<Dangky> {
           'password': passwordController.text.trim(),
           'name': nameController.text.trim(),
           'created_at': Timestamp.now(),
-          'isLoggedIn': false,  // Thêm trường isLoggedIn khi đăng ký
         });
         
         print("Thêm người dùng mới thành công: ${docRef.id}");
