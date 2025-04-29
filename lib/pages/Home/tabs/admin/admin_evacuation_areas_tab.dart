@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../services/evacuation_service.dart';
 import '../../../../models/evacuation_area.dart';
 import '../../../EvacuationArea/add_evacuation_area.dart';
+import 'admin_permission_mixin.dart';
 
 class AdminEvacuationAreasTab extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -17,8 +19,14 @@ class AdminEvacuationAreasTab extends StatefulWidget {
   _AdminEvacuationAreasTabState createState() => _AdminEvacuationAreasTabState();
 }
 
-class _AdminEvacuationAreasTabState extends State<AdminEvacuationAreasTab> {
+class _AdminEvacuationAreasTabState extends State<AdminEvacuationAreasTab> with AdminPermissionMixin {
   final EvacuationService _evacuationService = EvacuationService();
+
+  @override
+  void initState() {
+    super.initState();
+    checkAdminPermission(context, widget.userData, widget.isLoggedIn);
+  }
 
   @override
   Widget build(BuildContext context) {

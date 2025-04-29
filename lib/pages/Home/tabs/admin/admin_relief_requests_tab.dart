@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'admin_permission_mixin.dart';
 import '../../../../utils/date_formatter.dart';
 import '../../../../widgets/common/status_badge.dart';
 
@@ -18,7 +19,7 @@ class AdminReliefRequestsTab extends StatefulWidget {
 }
 
 class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AdminPermissionMixin {
   late TabController _tabController;
   final FirebaseFirestore db = FirebaseFirestore.instance;
 
@@ -26,6 +27,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    checkAdminPermission(context, widget.userData, widget.isLoggedIn);
   }
 
   @override

@@ -37,7 +37,6 @@ class _DangNhap extends State<Dangnhap> {
           .get();
       
       if (user.docs.isEmpty) {
-        // Xử lý trường hợp không tìm thấy user
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Số điện thoại hoặc mật khẩu không đúng'),
@@ -63,7 +62,6 @@ class _DangNhap extends State<Dangnhap> {
       await prefs.setString('userName', userData['name'] ?? '');
       await prefs.setString('userPhone', userData['phone'] ?? '');
       
-      // Hiển thị thông báo thành công với vai trò tương ứng
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Đăng nhập thành công với quyền ${isAdmin ? 'quản trị viên' : 'người dùng'}'),
@@ -71,15 +69,14 @@ class _DangNhap extends State<Dangnhap> {
         )
       );
       
-      // Chuyển về trang Home với thông tin về vai trò admin
-      Navigator.pushReplacement(
-        context, 
-        MaterialPageRoute(
-          builder: (context) => Home(isAdmin: isAdmin)
-        )
+      // Quay về trang Home, không truyền tham số isAdmin nữa
+      // Home sẽ tự lấy từ SharedPreferences
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => Home()),
+        (route) => false,
       );
     } catch (e) {
-      // Xử lý lỗi
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Lỗi: $e"),

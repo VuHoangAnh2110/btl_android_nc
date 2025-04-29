@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Thêm import
 import 'tabs/admin/admin_users_tab.dart';
 import 'tabs/admin/admin_notifications_tab.dart';
@@ -52,23 +54,46 @@ class _HomeState extends State<Home> {
       final userId = prefs.getString('userId');
       
       if (userId != null) {
-        // Đã có người dùng đăng nhập, lấy thông tin chi tiết từ Firestore
+        // Đọc thông tin admin từ SharedPreferences
+        final bool savedIsAdmin = prefs.getBool('isAdmin') ?? false;
+        final String userName = prefs.getString('userName') ?? '';
+        final String userPhone = prefs.getString('userPhone') ?? '';
+        
+        // Đã có người dùng đăng nhập, truy vấn Firestore để lấy dữ liệu mới nhất
         final userDoc = await db.collection('users').doc(userId).get();
         
         if (userDoc.exists) {
           Map<String, dynamic> firestoreUserData = userDoc.data() as Map<String, dynamic>;
           
+          // Kiểm tra quyền admin từ Firestore 
+          // Cập nhật lại nếu có thay đổi
+          bool isAdmin = firestoreUserData['isAdmin'] == true;
+          
+          // Chỉ cập nhật SharedPreferences nếu trạng thái admin thay đổi
+          if (savedIsAdmin != isAdmin) {
+            await prefs.setBool('isAdmin', isAdmin);
+          }
+          
+          // Tạo object userData với đầy đủ thông tin
+          Map<String, dynamic> updatedUserData = {
+            ...firestoreUserData,
+            'id': userId,
+            'isAdmin': isAdmin
+          };
+          
           setState(() {
-            userData = firestoreUserData;
+            userData = updatedUserData;
             isLoggedIn = true;
-            isActuallyAdmin = prefs.getBool('isAdmin') ?? false;
+            isActuallyAdmin = isAdmin;
           });
         } else {
-          // Tài khoản không còn tồn tại trong Firestore
-          logout(); // Đăng xuất nếu tài khoản không còn tồn tại
+          // Tài khoản đã bị xóa khỏi Firestore, đăng xuất
+          logout();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Tài khoản không tồn tại, vui lòng đăng nhập lại'))
+          );
         }
       } else {
-        // Không có người dùng đăng nhập
         setState(() {
           userData = null;
           isLoggedIn = false;
@@ -77,6 +102,9 @@ class _HomeState extends State<Home> {
       }
     } catch (e) {
       debugPrint('Lỗi khi lấy thông tin người dùng: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi xác thực: $e'))
+      );
     }
   }
 
@@ -89,11 +117,12 @@ class _HomeState extends State<Home> {
       await prefs.remove('userName');
       await prefs.remove('userPhone');
       
-      // Reset trạng thái local
+      // Reset trạng thái local và đặt lại chỉ số tab
       setState(() {
         userData = null;
         isLoggedIn = false;
         isActuallyAdmin = false;
+        _selectedIndex = 0; // Đặt lại chỉ số tab về 0
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -219,8 +248,8 @@ class _HomeState extends State<Home> {
   // Giao diện 
   @override
   Widget build(BuildContext context) {
-    // Sử dụng isActuallyAdmin thay vì widget.isAdmin nếu widget.isAdmin là false hoặc chưa có cột thông tin đó 
-    bool showAdminInterface = widget.isAdmin || isActuallyAdmin;
+    // Chỉ hiển thị giao diện admin khi người dùng đã đăng nhập và có quyền admin
+    bool showAdminInterface = isLoggedIn && isActuallyAdmin;
     
     return Scaffold( // Scaffold là widget chính của trang
       appBar: AppBar(
@@ -320,10 +349,7 @@ class _HomeState extends State<Home> {
                   icon: Icon(Icons.location_on),
                   label: 'Khu vực di tản',
                 ),
-                BottomNavigationBarItem( // Thêm item mới
-                  icon: Icon(Icons.location_on),
-                  label: 'Khu vực di tản',
-                ),
+                
               ]
             : [
                 BottomNavigationBarItem(

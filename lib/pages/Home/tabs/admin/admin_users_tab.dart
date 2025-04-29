@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../utils/date_formatter.dart';
+import 'admin_permission_mixin.dart';
 
-class AdminUsersTab extends StatelessWidget {
+class AdminUsersTab extends StatefulWidget {
   final Map<String, dynamic>? userData;
   final bool isLoggedIn;
 
-  const AdminUsersTab({
-    Key? key,
-    required this.userData,
-    required this.isLoggedIn,
-  }) : super(key: key);
+  const AdminUsersTab({Key? key, this.userData, required this.isLoggedIn}) : super(key: key);
+
+  @override
+  _AdminUsersTabState createState() => _AdminUsersTabState();
+}
+
+class _AdminUsersTabState extends State<AdminUsersTab> with AdminPermissionMixin {
+  @override
+  void initState() {
+    super.initState();
+    checkAdminPermission(context, widget.userData, widget.isLoggedIn);
+  }
 
   @override
   Widget build(BuildContext context) {

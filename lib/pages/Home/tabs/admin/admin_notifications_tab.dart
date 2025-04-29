@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../utils/date_formatter.dart';
 import '../../../../services/notification_service.dart';
+import 'admin_permission_mixin.dart';
 
 class AdminNotificationsTab extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -17,7 +18,7 @@ class AdminNotificationsTab extends StatefulWidget {
   _AdminNotificationsTabState createState() => _AdminNotificationsTabState();
 }
 
-class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
+class _AdminNotificationsTabState extends State<AdminNotificationsTab> with AdminPermissionMixin {
   late TextEditingController _titleController;
   late TextEditingController _bodyController;
   final NotificationService _notificationService = NotificationService();
@@ -27,6 +28,7 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
     super.initState();
     _titleController = TextEditingController();
     _bodyController = TextEditingController();
+    checkAdminPermission(context, widget.userData, widget.isLoggedIn);
   }
 
   @override
