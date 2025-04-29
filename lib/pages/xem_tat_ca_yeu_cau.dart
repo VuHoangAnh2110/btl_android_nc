@@ -118,10 +118,6 @@ class _XemTatCaYeuCauState extends State<XemTatCaYeuCau> {
             return false;
           }
           
-          // Loại bỏ yêu cầu chấp nhận nhưng khẩn cấp
-          if (trangThai == 'chấp nhận' && mucDo == 'Khẩn cấp') {
-            return false;
-          }
           
           return true;
         }).toList();

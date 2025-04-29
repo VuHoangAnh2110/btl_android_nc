@@ -261,60 +261,26 @@ class _UserHomeTabState extends State<UserHomeTab> {
   }
 
   Widget _buildRecentReliefsSection() {
-    final db = FirebaseFirestore.instance;
-
     return StreamBuilder<QuerySnapshot>(
-      stream: db
-          .collection('tblYeuCau')
-          .where('sTrangThai', isEqualTo: 'chấp nhận')
-          .where('sMucDo', isEqualTo: 'Thường')          
-          .orderBy('tNgayGui', descending: true)
-          .limit(5)
-          .snapshots(),
+      stream: FirebaseFirestore.instance
+        .collection('tblYeuCau')
+        .where('sTrangThai', whereIn: ['đang xác minh', 'chấp nhận']) // Chỉ lấy yêu cầu đang xác minh và chấp nhận
+        .limit(10) // Lấy nhiều hơn để đảm bảo có đủ dữ liệu sau khi sắp xếp
+        .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
+          return Center(
+            child: CircularProgressIndicator(),
+          );
         }
 
         if (snapshot.hasError) {
-          // Ghi log lỗi để theo dõi, không hiển thị chi tiết cho người dùng
           debugPrint('Lỗi khi tải dữ liệu yêu cầu cứu trợ: ${snapshot.error}');
-          
           return Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
             child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    color: Colors.orange,
-                    size: 40,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Không thể tải dữ liệu yêu cầu cứu trợ',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      // Thực hiện fresh build context - đây là cách đơn giản
-                      // nhưng trong ứng dụng thực tế, bạn có thể cần cách tốt hơn để refresh stream
-                      (context as Element).markNeedsBuild();
-                    },
-                    icon: Icon(Icons.refresh),
-                    label: Text('Thử lại'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                ],
+              padding: EdgeInsets.all(16),
+              child: Center(
+                child: Text('Đã xảy ra lỗi khi tải dữ liệu'),
               ),
             ),
           );
@@ -322,23 +288,74 @@ class _UserHomeTabState extends State<UserHomeTab> {
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Card(
-            elevation: 1,
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(32),
               child: Center(
-                child: Text('Không có yêu cầu cứu trợ gần đây'),
+                child: Column(
+                  children: [
+                    Icon(Icons.info_outline, size: 48, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      'Chưa có yêu cầu cứu trợ nào',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
         }
 
+        // Sắp xếp dữ liệu: "đang xác minh" lên đầu, sau đó đến "chấp nhận"
+        var sortedDocs = snapshot.data!.docs.toList();
+        sortedDocs.sort((a, b) {
+          var statusA = (a.data() as Map<String, dynamic>)['sTrangThai'] as String?;
+          var statusB = (b.data() as Map<String, dynamic>)['sTrangThai'] as String?;
+          
+          if (statusA == 'đang xác minh' && statusB != 'đang xác minh') {
+            return -1; // A (đang xác minh) lên trước B
+          } else if (statusA != 'đang xác minh' && statusB == 'đang xác minh') {
+            return 1; // B (đang xác minh) lên trước A
+          } else {
+            // Nếu cùng trạng thái, sắp xếp theo thời gian mới nhất
+            var dateA = (a.data() as Map<String, dynamic>)['tNgayGui'] as Timestamp?;
+            var dateB = (b.data() as Map<String, dynamic>)['tNgayGui'] as Timestamp?;
+            
+            if (dateA == null && dateB == null) return 0;
+            if (dateA == null) return 1;
+            if (dateB == null) return -1;
+            
+            return dateB.compareTo(dateA); // Mới nhất lên đầu
+          }
+        });
+        
+        // Giới hạn chỉ lấy 5 item đầu tiên sau khi sắp xếp
+        if (sortedDocs.length > 5) {
+          sortedDocs = sortedDocs.sublist(0, 5);
+        }
+
         return ListView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
-          itemCount: snapshot.data!.docs.length,
+          itemCount: sortedDocs.length,
           itemBuilder: (context, index) {
-            var request = snapshot.data!.docs[index].data() as Map<String, dynamic>;
-            var requestId = snapshot.data!.docs[index].id;
+            var request = sortedDocs[index].data() as Map<String, dynamic>;
+            var requestId = sortedDocs[index].id;
+
+            // Xác định màu dựa trên trạng thái
+            Color statusColor;
+            String statusText = request['sTrangThai'] ?? 'Không xác định';
+            
+            switch (statusText) {
+              case 'đang xác minh':
+                statusColor = Colors.orange;
+                break;
+              case 'chấp nhận':
+                statusColor = Colors.green;
+                break;
+              default:
+                statusColor = Colors.grey;
+            }
 
             return Card(
               elevation: 2,
@@ -346,13 +363,12 @@ class _UserHomeTabState extends State<UserHomeTab> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
                 side: BorderSide(
-                  color: Colors.green.withAlpha(70),
+                  color: statusColor.withAlpha(70),
                   width: 1,
                 ),
               ),
               child: InkWell(
                 onTap: () {
-                  // Chuyển đến trang chi tiết yêu cầu
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -399,6 +415,26 @@ class _UserHomeTabState extends State<UserHomeTab> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Hiển thị trạng thái
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: statusColor),
+                            ),
+                            child: Text(
+                              statusText,
+                              style: TextStyle(
+                                color: statusColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          
+                          SizedBox(height: 8),
+                          
                           // Tiêu đề
                           Text(
                             request['sTieuDe'] ?? 'Yêu cầu cứu trợ',
