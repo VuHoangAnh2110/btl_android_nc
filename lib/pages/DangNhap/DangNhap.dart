@@ -286,7 +286,7 @@ class _DangNhap extends State<Dangnhap> {
                               Navigator.pop(context);
                             },
                             icon: Icon(Icons.arrow_back),
-                            label: Text('Quay lại trang chủ'),
+                            label: Text('Quay lại'),
                           ),
                         ],
                       ),
