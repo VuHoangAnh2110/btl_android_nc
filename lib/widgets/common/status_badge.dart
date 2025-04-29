@@ -25,6 +25,8 @@ class StatusBadge extends StatelessWidget {
         return 'Đã phê duyệt';
       case 'từ chối':
         return 'Đã từ chối';
+      case 'chờ xác minh':
+        return 'Chờ xác minh';
       default:
         return 'Đang chờ';
     }

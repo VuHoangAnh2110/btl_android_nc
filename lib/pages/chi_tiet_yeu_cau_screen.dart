@@ -224,13 +224,31 @@ class _ChiTietYeuCauScreenState extends State<ChiTietYeuCauScreen> {
 
                               // Người duyệt
                               _buildSectionTitle('Phê duyệt'),
-                              if (request['sNguoiDuyet'] != null)
-                                _buildInfoRow(
-                                  Icons.verified_user,
-                                  'Người duyệt:',
-                                  request['sNguoiDuyet'],
-                                  Colors.blue,
+                              Padding(
+                                padding: EdgeInsets.only(left: 8),
+                                child: Column(
+                                  children: [
+                                    if (request['sNguoiDuyet'] != null)
+                                      _buildInfoRow(
+                                        Icons.verified_user,
+                                        'Người duyệt:',
+                                        request['sNguoiDuyet'],
+                                        Colors.blue,
+                                      ),
+                                    
+                                    SizedBox(height: 8),
+
+                                    if (request['sSDTNguoiDuyet'] != null)
+                                    _buildInfoRow(
+                                      Icons.phone,
+                                      'Liên hệ:',
+                                      request['sSDTNguoiDuyet'] ?? 'Không có thông tin',
+                                      Colors.green,
+                                      isPhone: true,
+                                    ),
+                                  ],
                                 ),
+                              ),
                             ],
                           ),
                         ),
@@ -249,7 +267,7 @@ class _ChiTietYeuCauScreenState extends State<ChiTietYeuCauScreen> {
                           _makePhoneCall(request['userId']);
                         },
                         icon: Icon(Icons.call),
-                        label: Text('Gọi hỗ trợ'),
+                        label: Text('Gọi đến người cần hỗ trợ'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
