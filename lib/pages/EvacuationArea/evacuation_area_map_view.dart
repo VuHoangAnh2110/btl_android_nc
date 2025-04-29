@@ -190,15 +190,48 @@ class _EvacuationAreaMapViewState extends State<EvacuationAreaMapView> {
   
   void _openInMaps() async {
     try {
-      final url = "https://www.google.com/maps/dir/?api=1&destination=${widget.area.latitude},${widget.area.longitude}&travelmode=driving";
-      if (await canLaunch(url)) {
-        await launch(url);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Không thể mở ứng dụng bản đồ'))
-        );
+      // Phương án 1: Sử dụng URI schema "geo:" (ưu tiên)
+      final Uri geoUri = Uri.parse(
+        "geo:${widget.area.latitude},${widget.area.longitude}?q=${widget.area.latitude},${widget.area.longitude}(${Uri.encodeComponent(widget.area.name)})"
+      );
+      
+      if (await canLaunchUrl(geoUri)) {
+        await launchUrl(geoUri);
+        return;
       }
+      
+      // Phương án 2: URL Google Maps
+      final Uri googleUrl = Uri.parse(
+        "https://www.google.com/maps/search/?api=1&query=${widget.area.latitude},${widget.area.longitude}"
+      );
+      
+      if (await canLaunchUrl(googleUrl)) {
+        await launchUrl(
+          googleUrl,
+          mode: LaunchMode.externalApplication,
+        );
+        return;
+      }
+      
+      // Phương án 3: URL Google Maps Directions
+      final Uri directionsUrl = Uri.parse(
+        "https://www.google.com/maps/dir/?api=1&destination=${widget.area.latitude},${widget.area.longitude}&travelmode=driving"
+      );
+      
+      if (await canLaunchUrl(directionsUrl)) {
+        await launchUrl(
+          directionsUrl,
+          mode: LaunchMode.externalApplication,
+        );
+        return;
+      }
+      
+      // Không có phương án nào thành công
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Không thể mở ứng dụng bản đồ. Hãy cài đặt Google Maps.'))
+      );
     } catch (e) {
+      print("Lỗi khi mở bản đồ: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi khi mở bản đồ: $e'))
       );
