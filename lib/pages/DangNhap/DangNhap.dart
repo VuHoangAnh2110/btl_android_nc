@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Thêm import
 import '../Home/Home.dart'; 
 import '../DangKy/DangKy.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 final FirebaseFirestore db = FirebaseFirestore.instance;
 
@@ -54,6 +55,19 @@ class _DangNhap extends State<Dangnhap> {
       
       // Kiểm tra quyền admin một cách an toàn
       final bool isAdmin = userData.containsKey('isAdmin') ? userData['isAdmin'] ?? false : false;
+      if (isAdmin) {   
+        // Lấy device token hiện tại
+        final FirebaseMessaging messaging = FirebaseMessaging.instance;
+        final String? deviceToken = await messaging.getToken();
+        
+        if (deviceToken != null) {
+          // Cập nhật token vào danh sách device_tokens của admin
+          await firestore.collection('users').doc(userId).update({
+            'device_token': FieldValue.arrayUnion([deviceToken])
+          });
+          print('Đã cập nhật device token cho admin: $deviceToken');
+        }
+      }
       
       // LƯU THÔNG TIN ĐĂNG NHẬP VÀO SHARED PREFERENCES
       final prefs = await SharedPreferences.getInstance();

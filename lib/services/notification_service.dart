@@ -40,6 +40,7 @@ class NotificationService {
       final payload = {
         'title': title,
         'body': body,
+        'topic': topic ?? 'all',
       };
       
       // Thực hiện POST request
