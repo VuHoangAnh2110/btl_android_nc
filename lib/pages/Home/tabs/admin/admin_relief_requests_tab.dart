@@ -27,7 +27,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     checkAdminPermission(context, widget.userData, widget.isLoggedIn);
   }
 
@@ -49,10 +49,24 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
             labelColor: Theme.of(context).primaryColor,
             unselectedLabelColor: Colors.grey,
             indicatorColor: Theme.of(context).primaryColor,
+            //isScrollable: true,  // Cho phép cuộn nếu nhiều tab
             tabs: [
-              Tab(text: 'Đang chờ duyệt'),
-              Tab(text: 'Đã duyệt'),
-              Tab(text: 'Đã từ chối'),
+              Tab(
+                icon: Icon(Icons.pending_actions),
+                text: 'Chờ duyệt',
+              ),
+              Tab(
+                icon: Icon(Icons.fact_check),
+                text: 'Xác minh',
+              ),
+              Tab(
+                icon: Icon(Icons.check_circle_outline),
+                text: 'Đã duyệt',
+              ),
+              Tab(
+                icon: Icon(Icons.cancel_outlined),
+                text: 'Đã từ chối',
+              ),
             ],
           ),
         ),
@@ -63,6 +77,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
             controller: _tabController,
             children: [
               _buildRequestsList('chờ duyệt'),
+              _buildRequestsList('chờ xác minh'),
               _buildRequestsList('chấp nhận'),
               _buildRequestsList('từ chối'),
             ],
@@ -119,9 +134,9 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                 Text(
                   status == 'chờ duyệt'
                       ? 'Không có yêu cầu nào đang chờ duyệt'
-                      : status == 'chấp nhận'
-                          ? 'Chưa có yêu cầu nào được duyệt'
-                          : 'Chưa có yêu cầu nào bị từ chối',
+                      : status == 'chờ xác minh'
+                          ? 'Chưa có yêu cầu nào chờ xác minh'
+                          : 'Chưa có yêu cầu nào được duyệt',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[600],
@@ -305,7 +320,79 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                                           .update({
                                             'sTrangThai': 'từ chối',
                                             'tNgayDuyet': Timestamp.now(), 
+                                            'sNguoiDuyet': widget.userData?['name'] ?? 'Admin',
+                                            'sSDTNguoiDuyet': widget.userData?['phone'] ?? 'Trống'
+                                          });
+
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                            content: Text('Đã từ chối yêu cầu')),
+                                      );
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Lỗi: $e')),
+                                      );
+                                    }
+                                  },
+                                  icon: Icon(Icons.close, color: Colors.red),
+                                  label: Text('Từ chối'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.red,
+                                  ),
+                                ),
+                                SizedBox(width: 16),
+                                ElevatedButton.icon(
+                                  onPressed: () async {
+                                    // Xử lý phê duyệt
+                                    try {
+                                      await db
+                                          .collection('tblYeuCau')
+                                          .doc(requestId)
+                                          .update({
+                                            'sTrangThai': 'chờ xác minh',
+                                            'tNgayDuyet': Timestamp.now(), 
                                             'sNguoiDuyet': widget.userData?['name'] ?? 'Admin', 
+                                            'sSDTNguoiDuyet': widget.userData?['phone'] ?? 'Trống'
+                                          });
+
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Đang xác minh yêu cầu'),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Lỗi: $e')),
+                                      );
+                                    }
+                                  },
+                                  icon: Icon(Icons.check),
+                                  label: Text('Xác minh'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color.fromARGB(255, 233, 156, 69),
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                          if (status == 'chờ xác minh')
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: () async {
+                                    // Xử lý từ chối
+                                    try {
+                                      await db
+                                          .collection('tblYeuCau')
+                                          .doc(requestId)
+                                          .update({
+                                            'sTrangThai': 'từ chối',
+                                            'tNgayDuyet': Timestamp.now(), 
+                                            'sNguoiDuyet': widget.userData?['name'] ?? 'Admin',
+                                            'sSDTNguoiDuyet': widget.userData?['phone'] ?? 'Trống'
                                           });
 
                                       ScaffoldMessenger.of(context).showSnackBar(
@@ -336,11 +423,12 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                                             'sTrangThai': 'chấp nhận',
                                             'tNgayDuyet': Timestamp.now(), 
                                             'sNguoiDuyet': widget.userData?['name'] ?? 'Admin', 
+                                            'sSDTNguoiDuyet': widget.userData?['phone'] ?? 'Trống'
                                           });
 
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
-                                          content: Text('Đã phê duyệt yêu cầu'),
+                                          content: Text('Đang xác minh yêu cầu'),
                                           backgroundColor: Colors.green,
                                         ),
                                       );
@@ -351,7 +439,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                                     }
                                   },
                                   icon: Icon(Icons.check),
-                                  label: Text('Phê duyệt'),
+                                  label: Text('phê duyệt'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green,
                                     foregroundColor: Colors.white,
@@ -359,32 +447,8 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                                 ),
                               ],
                             ),
-
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              OutlinedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ChiTietYeuCauScreen(
-                                        requestId: requestId,
-                                        request: request,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                icon: Icon(Icons.visibility),
-                                label: Text('Xem chi tiết'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Theme.of(context).primaryColor,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          if (status != 'chờ duyệt')
+                          
+                          if (status != 'chờ duyệt' && status != 'chờ xác minh')
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
@@ -438,6 +502,30 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                                 ),
                               ],
                             ),
+                          
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ChiTietYeuCauScreen(
+                                        requestId: requestId,
+                                        request: request,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: Icon(Icons.visibility),
+                                label: Text('Xem chi tiết'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
