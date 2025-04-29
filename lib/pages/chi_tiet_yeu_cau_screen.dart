@@ -241,7 +241,7 @@ class _ChiTietYeuCauScreenState extends State<ChiTietYeuCauScreen> {
                   SizedBox(height: 20),
 
                   // Nút gọi hỗ trợ
-                  if (request['userId'] != null)
+                  if (request['userId'] != null && request['userId'] != "Trống")
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
