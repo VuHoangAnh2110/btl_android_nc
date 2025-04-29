@@ -11,6 +11,7 @@ import 'tabs/user/user_home_tab.dart';
 import 'tabs/user/user_relief_request_tab.dart';
 import 'tabs/user/user_settings_tab.dart';
 import '../EvacuationArea/evacuation_areas_list_user.dart';
+import '../../widgets/PolicyAgreementDialog.dart';
 
 // Cấu trúc dữ liệu 
 // users: Thông tin người dùng (name, phone, password, isAdmin, isLoggedIn)
@@ -35,6 +36,7 @@ class _HomeState extends State<Home> {
   Map<String, dynamic>? userData; // Dữ liệu người dùng đã đăng nhập
   bool isLoggedIn = false; // Biến để theo dõi trạng thái đăng nhập
   bool isActuallyAdmin = false; // Biến mới để theo dõi quyền admin thực tế
+  bool _isAdmin = false; // Mặc định là false, cần cập nhật dựa trên hệ thống xác thực
 
   final FirebaseFirestore db = FirebaseFirestore.instance;
   // Biến để lưu vị trí đã chọn
@@ -45,6 +47,11 @@ class _HomeState extends State<Home> {
   void initState() { //Widget khởi tạo lần đầu tiên 
     super.initState();
     fetchUserData();
+    _checkAdminStatus();
+    // Hiển thị dialog chính sách sau khi widget được khởi tạo
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      PolicyAgreementDialog.showIfNeeded(context, _isAdmin);
+    });
   }
 
   Future<void> fetchUserData() async {
@@ -245,6 +252,30 @@ class _HomeState extends State<Home> {
     }
   }
 
+  Future<void> _checkAdminStatus() async {
+    // Thêm logic kiểm tra người dùng có quyền admin không
+    // Ví dụ: Nếu sử dụng Firebase Auth và Firestore
+    try {
+      // final user = FirebaseAuth.instance.currentUser;
+      // if (user != null) {
+      //   final userData = await FirebaseFirestore.instance
+      //     .collection('users')
+      //     .doc(user.uid)
+      //     .get();
+      //   setState(() {
+      //     _isAdmin = userData.data()?['role'] == 'admin';
+      //   });
+      // }
+      
+      // TẠM THỜI: Để false để dialog luôn hiển thị
+      setState(() {
+        _isAdmin = false;
+      });
+    } catch (e) {
+      print('Lỗi khi kiểm tra trạng thái admin: $e');
+    }
+  }
+
   // Giao diện 
   @override
   Widget build(BuildContext context) {
@@ -257,6 +288,16 @@ class _HomeState extends State<Home> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         actions: [
+          // Thêm nút chính sách ở đây
+          IconButton(
+            icon: Icon(Icons.policy),
+            tooltip: 'Chính sách sử dụng',
+            onPressed: () {
+              // Hiển thị dialog chính sách - bỏ qua kiểm tra đã đồng ý hay chưa
+              PolicyAgreementDialog.show(context);
+            },
+          ),
+          
           // Hiển thị badge hoặc icon riêng cho admin
           if (showAdminInterface)
             Icon(Icons.admin_panel_settings),
