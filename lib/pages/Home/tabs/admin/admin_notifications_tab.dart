@@ -93,8 +93,7 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
                             _bodyController.text.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(
-                                  'Vui lòng nhập đầy đủ tiêu đề và nội dung thông báo'),
+                              content: Text('Vui lòng nhập đầy đủ tiêu đề và nội dung thông báo'),
                               backgroundColor: Colors.red,
                             ),
                           );
@@ -106,8 +105,7 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
                           context: context,
                           builder: (context) => AlertDialog(
                             title: Text('Xác nhận gửi thông báo khẩn cấp'),
-                            content: Text(
-                                'Bạn có chắc muốn gửi thông báo khẩn cấp này đến tất cả người dùng?'),
+                            content: Text('Bạn có chắc muốn gửi thông báo khẩn cấp này đến tất cả người dùng?'),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context),
@@ -137,8 +135,7 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
 
                                   try {
                                     // Gửi thông báo
-                                    bool success = await _notificationService
-                                        .sendNotification(
+                                    bool success = await _notificationService.sendNotification(
                                       title: _titleController.text,
                                       body: _bodyController.text,
                                       topic: 'all',
@@ -151,8 +148,7 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
 
                                     // Sử dụng context gốc để hiển thị thông báo kết quả
                                     if (originContext.mounted) {
-                                      ScaffoldMessenger.of(originContext)
-                                          .showSnackBar(
+                                      ScaffoldMessenger.of(originContext).showSnackBar(
                                         SnackBar(
                                           content: Text(
                                             success
@@ -167,8 +163,10 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
 
                                       if (success) {
                                         // Xóa input nếu gửi thành công
-                                        _titleController.clear();
-                                        _bodyController.clear();
+                                        setState(() {
+                                          _titleController.clear();
+                                          _bodyController.clear();
+                                        });
                                       }
                                     }
                                   } catch (e) {

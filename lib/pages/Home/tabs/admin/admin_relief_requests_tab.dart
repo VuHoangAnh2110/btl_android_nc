@@ -138,8 +138,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                       children: [
                         Icon(Icons.person, size: 14, color: Colors.grey),
                         SizedBox(width: 4),
-                        Text(
-                          'Người gửi: ${request['userName'] ?? 'Không có tên'}',
+                        Text('Người gửi: ${request['userName'] ?? 'Không có tên'}',
                           style: TextStyle(fontSize: 14),
                         ),
                       ],
@@ -149,8 +148,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                       children: [
                         Icon(Icons.access_time, size: 14, color: Colors.grey),
                         SizedBox(width: 4),
-                        Text(
-                          'Ngày gửi: ${DateFormatter.formatDate(request['tNgayGui'])}',
+                        Text('Ngày gửi: ${DateFormatter.formatDate(request['tNgayGui'])}',
                           style: TextStyle(fontSize: 14),
                         ),
                       ],
@@ -164,8 +162,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Mô tả chi tiết:',
+                        Text('Mô tả chi tiết:',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -175,8 +172,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                         Text(request['sMoTa'] ?? 'Không có mô tả'),
                         SizedBox(height: 16),
 
-                        Text(
-                          'Địa điểm:',
+                        Text('Địa điểm:',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -227,7 +223,11 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                                     await db
                                         .collection('tblYeuCau')
                                         .doc(requestId)
-                                        .update({'sTrangThai': 'từ chối'});
+                                        .update({
+                                          'sTrangThai': 'từ chối',
+                                          'tNgayDuyet': Timestamp.now(), 
+                                          'sNguoiDuyet': widget.userData?['name'] ?? 'Admin', 
+                                        });
 
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -253,7 +253,10 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                                     await db
                                         .collection('tblYeuCau')
                                         .doc(requestId)
-                                        .update({'sTrangThai': 'chấp nhận'});
+                                        .update({'sTrangThai': 'chấp nhận',
+                                          'tNgayDuyet': Timestamp.now(), 
+                                          'sNguoiDuyet': widget.userData?['name'] ?? 'Admin', 
+                                        });
 
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -288,8 +291,7 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                                     context: context,
                                     builder: (context) => AlertDialog(
                                       title: Text('Xác nhận xóa'),
-                                      content: Text(
-                                          'Bạn có chắc muốn xóa yêu cầu này không?'),
+                                      content: Text('Bạn có chắc muốn xóa yêu cầu này không?'),
                                       actions: [
                                         TextButton(
                                           onPressed: () =>
@@ -305,15 +307,13 @@ class _AdminReliefRequestsTabState extends State<AdminReliefRequestsTab>
                                                   .doc(requestId)
                                                   .delete();
 
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
+                                              ScaffoldMessenger.of(context).showSnackBar(
                                                 SnackBar(
                                                     content:
                                                         Text('Đã xóa yêu cầu')),
                                               );
                                             } catch (e) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
+                                              ScaffoldMessenger.of(context).showSnackBar(
                                                 SnackBar(
                                                     content: Text('Lỗi: $e')),
                                               );
