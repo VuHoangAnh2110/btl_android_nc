@@ -10,9 +10,12 @@ import 'tabs/admin/admin_evacuation_areas_tab.dart'; // Thêm dòng này
 import 'tabs/user/user_home_tab.dart';
 import 'tabs/user/user_relief_request_tab.dart';
 import 'tabs/user/user_settings_tab.dart';
+import 'tabs/ontap/list_nguoi_tab.dart';
 import '../EvacuationArea/evacuation_areas_list_user.dart';
 import 'package:btl_android_nc/services/notification_service.dart';  // Thêm import này
 import '../../widgets/PolicyAgreementDialog.dart';
+
+import 'package:btl_android_nc/22a1001d0027_vuhoanganh_552025/man_chinh.dart';
 
 // Cấu trúc dữ liệu 
 // users: Thông tin người dùng (name, phone, password, isAdmin, isLoggedIn)
@@ -358,12 +361,17 @@ class _HomeState extends State<Home> {
             : [
                 // Các tab cho người dùng thường
                 UserHomeTab(userData: userData, isLoggedIn: isLoggedIn),
-                UserReliefRequestTab(userData: userData, isLoggedIn: isLoggedIn),
-                EvacuationAreasListUser(),
+                // UserReliefRequestTab(userData: userData, isLoggedIn: isLoggedIn),
+                // EvacuationAreasListUser(),
                 UserSettingsTab(
                     userData: userData,
                     isLoggedIn: isLoggedIn,
                     onLogout: logout),
+                // NguoiListTab(userData: userData, isLoggedIn: isLoggedIn),
+
+
+                NhanVienListTab(userData: userData, isLoggedIn: isLoggedIn),
+
               ],
       ),
       
@@ -398,17 +406,21 @@ class _HomeState extends State<Home> {
                   icon: Icon(Icons.home),
                   label: 'Trang chủ',
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.volunteer_activism),
-                  label: 'Yêu cầu cứu trợ',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.location_on),
-                  label: 'Khu vực di tản',
-                ),
+                // BottomNavigationBarItem(
+                //   icon: Icon(Icons.volunteer_activism),
+                //   label: 'Yêu cầu cứu trợ',
+                // ),
+                // BottomNavigationBarItem(
+                //   icon: Icon(Icons.location_on),
+                //   label: 'Khu vực di tản',
+                // ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.settings),
                   label: 'Cài đặt',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.settings),
+                  label: 'Nhân viên',
                 ),
               ],
         currentIndex: _selectedIndex,
@@ -422,234 +434,236 @@ class _HomeState extends State<Home> {
       ),
       
       // SOS button cho cả admin và người dùng thường
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async{
-          // Hiển thị đang tải
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (BuildContext context) {
-              return Center(
-                child: CircularProgressIndicator(),
-              );
-            },
-          );
+    //   floatingActionButton: FloatingActionButton.extended(
+    //     onPressed: () async{
+    //       // Hiển thị đang tải
+    //       showDialog(
+    //         context: context,
+    //         barrierDismissible: false,
+    //         builder: (BuildContext context) {
+    //           return Center(
+    //             child: CircularProgressIndicator(),
+    //           );
+    //         },
+    //       );
 
-          try{
-            await _getCurrentLocation();
-            if (_toaDoHienTai == null && _diaChiHienTai == null) {
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Không thể lấy vị trí, tọa độ hiện tại')),
-              );
-            } else {
-              Navigator.of(context).pop();
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  // Controller cho ô nhập số điện thoại
-                  TextEditingController phoneController = TextEditingController();
+    //       try{
+    //         await _getCurrentLocation();
+    //         if (_toaDoHienTai == null && _diaChiHienTai == null) {
+    //           Navigator.of(context).pop();
+    //           ScaffoldMessenger.of(context).showSnackBar(
+    //             SnackBar(content: Text('Không thể lấy vị trí, tọa độ hiện tại')),
+    //           );
+    //         } else {
+    //           Navigator.of(context).pop();
+    //           showDialog(
+    //             context: context,
+    //             builder: (BuildContext context) {
+    //               // Controller cho ô nhập số điện thoại
+    //               TextEditingController phoneController = TextEditingController();
                   
-                  // Tự động điền số điện thoại của người dùng nếu có
-                  if (userData != null && userData!['phone'] != null) {
-                    phoneController.text = userData!['phone'];
-                  }
+    //               // Tự động điền số điện thoại của người dùng nếu có
+    //               if (userData != null && userData!['phone'] != null) {
+    //                 phoneController.text = userData!['phone'];
+    //               }
                   
-                  return AlertDialog(
-                    title: Text('Gửi SOS'),
-                    content: SingleChildScrollView( // Thêm SingleChildScrollView để ngăn tràn
-                      child: Container(
-                        width: double.maxFinite, // Đảm bảo chiều rộng đầy đủ
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min, // Giữ kích thước nhỏ nhất có thể
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Bạn chắc chắn muốn gửi yêu cầu SOS!'),
-                            SizedBox(height: 10),
-                            Text('Vị trí của bạn:'),
-                            Text(
-                              _diaChiHienTai ?? 'Chưa xác định được địa chỉ',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                              maxLines: 3, // Giới hạn số dòng hiển thị
-                              overflow: TextOverflow.ellipsis, // Hiển thị dấu ... nếu quá dài
-                            ),
-                            SizedBox(height: 16),
-                            Text('Số điện thoại liên hệ:'),
-                            SizedBox(height: 8), // Khoảng cách trước TextField
-                            TextField(
-                              controller: phoneController,
-                              decoration: InputDecoration(
-                                hintText: 'Nhập số điện thoại để liên hệ',
-                                prefixIcon: Icon(Icons.phone),
-                                border: OutlineInputBorder(),
-                                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                                isDense: true, // Làm cho TextField nhỏ gọn hơn
-                              ),
-                              keyboardType: TextInputType.phone,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text('Hủy'),
-                      ),
-                      TextButton(
-                        onPressed: () async {
-                          // Lưu context gốc để sử dụng sau này
-                          final originContext = context;
+    //               return AlertDialog(
+    //                 title: Text('Gửi SOS'),
+    //                 content: SingleChildScrollView( // Thêm SingleChildScrollView để ngăn tràn
+    //                   child: Container(
+    //                     width: double.maxFinite, // Đảm bảo chiều rộng đầy đủ
+    //                     child: Column(
+    //                       mainAxisSize: MainAxisSize.min, // Giữ kích thước nhỏ nhất có thể
+    //                       crossAxisAlignment: CrossAxisAlignment.start,
+    //                       children: [
+    //                         Text('Bạn chắc chắn muốn gửi yêu cầu SOS!'),
+    //                         SizedBox(height: 10),
+    //                         Text('Vị trí của bạn:'),
+    //                         Text(
+    //                           _diaChiHienTai ?? 'Chưa xác định được địa chỉ',
+    //                           style: TextStyle(fontWeight: FontWeight.bold),
+    //                           maxLines: 3, // Giới hạn số dòng hiển thị
+    //                           overflow: TextOverflow.ellipsis, // Hiển thị dấu ... nếu quá dài
+    //                         ),
+    //                         SizedBox(height: 16),
+    //                         Text('Số điện thoại liên hệ:'),
+    //                         SizedBox(height: 8), // Khoảng cách trước TextField
+    //                         TextField(
+    //                           controller: phoneController,
+    //                           decoration: InputDecoration(
+    //                             hintText: 'Nhập số điện thoại để liên hệ',
+    //                             prefixIcon: Icon(Icons.phone),
+    //                             border: OutlineInputBorder(),
+    //                             contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+    //                             isDense: true, // Làm cho TextField nhỏ gọn hơn
+    //                           ),
+    //                           keyboardType: TextInputType.phone,
+    //                         ),
+    //                       ],
+    //                     ),
+    //                   ),
+    //                 ),
+    //                 actions: [
+    //                   TextButton(
+    //                     onPressed: () => Navigator.of(context).pop(),
+    //                     child: Text('Hủy'),
+    //                   ),
+    //                   TextButton(
+    //                     onPressed: () async {
+    //                       // Lưu context gốc để sử dụng sau này
+    //                       final originContext = context;
                           
-                          // Lấy số điện thoại từ input
-                          final contactPhone = phoneController.text.trim();
+    //                       // Lấy số điện thoại từ input
+    //                       final contactPhone = phoneController.text.trim();
                           
-                          // Đóng dialog xác nhận
-                          Navigator.of(context).pop();
+    //                       // Đóng dialog xác nhận
+    //                       Navigator.of(context).pop();
                           
-                          // Lưu tham chiếu để kiểm tra nếu widget vẫn được mounted
-                          bool isMounted = true;
+    //                       // Lưu tham chiếu để kiểm tra nếu widget vẫn được mounted
+    //                       bool isMounted = true;
                           
-                          // Tạo BuildContext cho dialog loading
-                          BuildContext? dialogContext;
+    //                       // Tạo BuildContext cho dialog loading
+    //                       BuildContext? dialogContext;
                           
-                          // Hiển thị dialog loading
-                          if (isMounted) {
-                            showDialog(
-                              context: originContext,
-                              barrierDismissible: false,
-                              builder: (BuildContext context) {
-                                dialogContext = context;
-                                return const Center(child: CircularProgressIndicator());
-                              },
-                            );
-                          }
+    //                       // Hiển thị dialog loading
+    //                       if (isMounted) {
+    //                         showDialog(
+    //                           context: originContext,
+    //                           barrierDismissible: false,
+    //                           builder: (BuildContext context) {
+    //                             dialogContext = context;
+    //                             return const Center(child: CircularProgressIndicator());
+    //                           },
+    //                         );
+    //                       }
                           
-                          try {
-                            // Chuẩn bị dữ liệu yêu cầu SOS
-                            Map<String, dynamic> requestData = {
-                              'sTieuDe': "Khẩn cấp",
-                              'sMoTa': "Yêu cầu cứu trợ khẩn cấp. Chú ý.",
-                              'sViTri': _diaChiHienTai ?? 'Chưa xác định được địa chỉ',
-                              'userId': userData?['phone'] ?? contactPhone,
-                              'userName': userData?['name'] ?? 'Người dùng',
-                              'tNgayGui': Timestamp.now(),
-                              'sTrangThai': 'chờ duyệt',
-                              'sMucDo': 'Khẩn cấp',
-                            };
+    //                       try {
+    //                         // Chuẩn bị dữ liệu yêu cầu SOS
+    //                         Map<String, dynamic> requestData = {
+    //                           'sTieuDe': "Khẩn cấp",
+    //                           'sMoTa': "Yêu cầu cứu trợ khẩn cấp. Chú ý.",
+    //                           'sViTri': _diaChiHienTai ?? 'Chưa xác định được địa chỉ',
+    //                           'userId': userData?['phone'] ?? contactPhone,
+    //                           'userName': userData?['name'] ?? 'Người dùng',
+    //                           'tNgayGui': Timestamp.now(),
+    //                           'sTrangThai': 'chờ duyệt',
+    //                           'sMucDo': 'Khẩn cấp',
+    //                         };
                             
-                            if (_toaDoHienTai != null) {
-                              requestData['sToaDo'] = GeoPoint(
-                                _toaDoHienTai!.latitude,
-                                _toaDoHienTai!.longitude,
-                              );
-                            }
+    //                         if (_toaDoHienTai != null) {
+    //                           requestData['sToaDo'] = GeoPoint(
+    //                             _toaDoHienTai!.latitude,
+    //                             _toaDoHienTai!.longitude,
+    //                           );
+    //                         }
                             
-                            // Lưu yêu cầu SOS vào Firestore
-                            DocumentReference docRef = await FirebaseFirestore.instance
-                                .collection('tblYeuCau')
-                                .add(requestData);
+    //                         // Lưu yêu cầu SOS vào Firestore
+    //                         DocumentReference docRef = await FirebaseFirestore.instance
+    //                             .collection('tblYeuCau')
+    //                             .add(requestData);
                             
-                            // Lấy ID của yêu cầu SOS vừa tạo
-                            String requestId = docRef.id;
+    //                         // Lấy ID của yêu cầu SOS vừa tạo
+    //                         String requestId = docRef.id;
                             
-                            // Chuẩn bị dữ liệu bổ sung cho thông báo
-                            Map<String, dynamic> additionalData = {
-                              'type': 'sos',
-                              'requestId': requestId,
-                              'location': _diaChiHienTai ?? 'Không xác định',
-                              'coordinates': _toaDoHienTai != null 
-                                  ? '${_toaDoHienTai!.latitude},${_toaDoHienTai!.longitude}' 
-                                  : 'Không có',
-                              'userName': userData?['name'] ?? 'Người dùng',
-                              'userPhone': userData?['phone'] ?? 'Không có SĐT',
-                              'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
-                              'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-                            };
+    //                         // Chuẩn bị dữ liệu bổ sung cho thông báo
+    //                         Map<String, dynamic> additionalData = {
+    //                           'type': 'sos',
+    //                           'requestId': requestId,
+    //                           'location': _diaChiHienTai ?? 'Không xác định',
+    //                           'coordinates': _toaDoHienTai != null 
+    //                               ? '${_toaDoHienTai!.latitude},${_toaDoHienTai!.longitude}' 
+    //                               : 'Không có',
+    //                           'userName': userData?['name'] ?? 'Người dùng',
+    //                           'userPhone': userData?['phone'] ?? 'Không có SĐT',
+    //                           'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+    //                           'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+    //                         };
                             
-                            // Sử dụng NotificationService để gửi thông báo
-                            final notificationService = NotificationService();
+    //                         // Sử dụng NotificationService để gửi thông báo
+    //                         final notificationService = NotificationService();
                             
-                            // Gửi thông báo tới admin
-                            bool sent = await notificationService.sendNotification(
-                              title: 'SOS - Yêu cầu cứu trợ khẩn cấp',
-                              body: 'Từ ${userData?['name'] ?? 'Người dùng'}: ${_diaChiHienTai ?? 'Vị trí chưa xác định'}',
-                              topic: 'admin',  
-                              data: additionalData,
-                            );
+    //                         // Gửi thông báo tới admin
+    //                         bool sent = await notificationService.sendNotification(
+    //                           title: 'SOS - Yêu cầu cứu trợ khẩn cấp',
+    //                           body: 'Từ ${userData?['name'] ?? 'Người dùng'}: ${_diaChiHienTai ?? 'Vị trí chưa xác định'}',
+    //                           topic: 'admin',  
+    //                           data: additionalData,
+    //                         );
                             
-                            // Đóng dialog loading an toàn sử dụng dialogContext
-                            if (dialogContext != null) {
-                              Navigator.of(dialogContext!).pop();
-                              dialogContext = null; // Xóa tham chiếu
-                            }
+    //                         // Đóng dialog loading an toàn sử dụng dialogContext
+    //                         if (dialogContext != null) {
+    //                           Navigator.of(dialogContext!).pop();
+    //                           dialogContext = null; // Xóa tham chiếu
+    //                         }
                             
-                            // Kiểm tra nếu context còn hợp lệ trước khi hiển thị SnackBar
-                            if (mounted) {
-                              // Sử dụng WidgetsBinding để đảm bảo hiển thị SnackBar sau khi navigate xong
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (mounted) {
-                                  if (sent) {
-                                    ScaffoldMessenger.of(originContext).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Gửi tín hiệu SOS thành công! Thông báo đã được gửi đến quản trị viên.'),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                    );
-                                  } else {
-                                    ScaffoldMessenger.of(originContext).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Đã lưu yêu cầu SOS, nhưng có thể có vấn đề khi gửi thông báo đến quản trị viên.'),
-                                        backgroundColor: Colors.orange,
-                                      ),
-                                    );
-                                  }
-                                }
-                              });
-                            }
-                          } catch (e) {
-                            // Đóng dialog loading an toàn
-                            if (dialogContext != null) {
-                              Navigator.of(dialogContext!).pop();
-                              dialogContext = null; // Xóa tham chiếu
-                            }
+    //                         // Kiểm tra nếu context còn hợp lệ trước khi hiển thị SnackBar
+    //                         if (mounted) {
+    //                           // Sử dụng WidgetsBinding để đảm bảo hiển thị SnackBar sau khi navigate xong
+    //                           WidgetsBinding.instance.addPostFrameCallback((_) {
+    //                             if (mounted) {
+    //                               if (sent) {
+    //                                 ScaffoldMessenger.of(originContext).showSnackBar(
+    //                                   const SnackBar(
+    //                                     content: Text('Gửi tín hiệu SOS thành công! Thông báo đã được gửi đến quản trị viên.'),
+    //                                     backgroundColor: Colors.green,
+    //                                   ),
+    //                                 );
+    //                               } else {
+    //                                 ScaffoldMessenger.of(originContext).showSnackBar(
+    //                                   const SnackBar(
+    //                                     content: Text('Đã lưu yêu cầu SOS, nhưng có thể có vấn đề khi gửi thông báo đến quản trị viên.'),
+    //                                     backgroundColor: Colors.orange,
+    //                                   ),
+    //                                 );
+    //                               }
+    //                             }
+    //                           });
+    //                         }
+    //                       } catch (e) {
+    //                         // Đóng dialog loading an toàn
+    //                         if (dialogContext != null) {
+    //                           Navigator.of(dialogContext!).pop();
+    //                           dialogContext = null; // Xóa tham chiếu
+    //                         }
                             
-                            // Hiển thị lỗi nếu widget vẫn tồn tại
-                            if (mounted) {
-                              // Sử dụng WidgetsBinding để đảm bảo hiển thị SnackBar sau khi navigate xong
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(originContext).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Gửi SOS lỗi: $e'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                }
-                              });
-                            }
-                          }
-                        },
-                        child: Text('Gửi SOS'),
-                      ),
-                    ],
-                  );
-                },
-              );
-            }
-          } catch (e) {
-            // Đóng dialog đang tải
-            Navigator.of(context).pop();
-            // Hiển thị thông báo lỗi
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Gửi SOS lỗi: $e')),
-            );
-          }
-        },
-        label: Text('SOS'),
-        icon: Icon(Icons.warning, color: Colors.white),
-        backgroundColor: Colors.red,
-      ),
+    //                         // Hiển thị lỗi nếu widget vẫn tồn tại
+    //                         if (mounted) {
+    //                           // Sử dụng WidgetsBinding để đảm bảo hiển thị SnackBar sau khi navigate xong
+    //                           WidgetsBinding.instance.addPostFrameCallback((_) {
+    //                             if (mounted) {
+    //                               ScaffoldMessenger.of(originContext).showSnackBar(
+    //                                 SnackBar(
+    //                                   content: Text('Gửi SOS lỗi: $e'),
+    //                                   backgroundColor: Colors.red,
+    //                                 ),
+    //                               );
+    //                             }
+    //                           });
+    //                         }
+    //                       }
+    //                     },
+    //                     child: Text('Gửi SOS'),
+    //                   ),
+    //                 ],
+    //               );
+    //             },
+    //           );
+    //         }
+    //       } catch (e) {
+    //         // Đóng dialog đang tải
+    //         Navigator.of(context).pop();
+    //         // Hiển thị thông báo lỗi
+    //         ScaffoldMessenger.of(context).showSnackBar(
+    //           SnackBar(content: Text('Gửi SOS lỗi: $e')),
+    //         );
+    //       }
+    //     },
+    //     label: Text('SOS'),
+    //     icon: Icon(Icons.warning, color: Colors.white),
+    //     backgroundColor: Colors.red,
+    //   ),
+
+
     );
   }
 
